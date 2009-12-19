@@ -35,7 +35,7 @@ parseUserMessage = do
                     status <- anyChar
                     nickName <- anyChar `manyTill` (lookAhead (oneOf ">"))
                     char '>'
-                    space 
+                    space
                     cont <- parseContent
                     return (Message ts nickName cont)
 
@@ -65,12 +65,12 @@ parseEvent = do
                 evtype <- parseEventType
                 param <- parseContent
                 return (LogEvent (Event ts evtype user host param))
-                
+
 parseEventType :: CharParser st EventType
 parseEventType = do
                     ev <- anyChar `manyTill` (lookAhead (oneOf " "))
                     space
-                    return (case ev of 
+                    return (case ev of
                                 "joined"    -> Join
                                 "left"      -> Part
                                 "quit"      -> Quit

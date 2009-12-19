@@ -1,25 +1,25 @@
 module Types where
 
 import Data.List
-import Data.Char 
+import Data.Char
 import Text.Printf
 
-data Timestamp = 
-	Timestamp 
-		{ 
+data Timestamp =
+	Timestamp
+		{
           ts_hour :: Int,
 		  ts_minute :: Int
 		}
 
 data Date =
-    Date 
+    Date
         {
             date_day    :: String,
             date_month  :: String,
             date_year   :: String
         }
 
-data User = 
+data User =
 	User {
 			user_nickname 	:: String,
 			user_words	 	:: Int,
@@ -46,9 +46,10 @@ data Logline =
     | Notification String
     | DateChange Date
     | LogEvent Event
+    | Simple String
 
 instance Show Timestamp where
-	show (Timestamp h m) = printf "%02d:%02d" h m 
+	show (Timestamp h m) = printf "%02d:%02d" h m
 
 instance Show Logline where
     show (Message ts nick content) = show ts ++ " " ++ "<" ++ nick ++ ">" ++ " " ++ content
