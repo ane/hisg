@@ -23,7 +23,7 @@ type Logfile = [Logline]
 type EventType = String
 
 instance Show Timestamp where
-  sow (Timestamp h m) = printf "%02d:%02d" h m
+  show (Timestamp h m) = printf "%02d:%02d" h m
 
 instance Show Logline where
   show (Message ts nick content) = show ts ++ " " ++ "<" ++ nick ++ ">" ++ " " ++ content
