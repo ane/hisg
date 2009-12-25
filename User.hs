@@ -20,15 +20,15 @@ instance Eq User where
 
 -- Counts the number of lines spoken by nick.
 countLines :: String -> Logfile -> Int
-countLines nick log = length (getLines nick log)
+countLines nick = length . getLines nick
 
 -- Gets the number of lines spoken by nick.
 getLines :: String -> Logfile -> Logfile
-getLines nick log = filter (matchNick nick) log
+getLines = filter . matchNick
 
 -- Counts the number of words spoken by nick.
 countWords :: String -> Logfile -> Int
-countWords nick log = length (getWords nick log)
+countWords nick = length . getWords nick
 
 getWords :: String -> Logfile -> [String]
 getWords nick log = foldl (++) [] (map (msgWords nick) log)
@@ -39,10 +39,10 @@ msgWords _ _ = []
 
 -- Counts the number of events of type evt by nick.
 countEvents :: String -> EventType -> Logfile -> Int
-countEvents nick evt log = length (getEvents nick evt log)
+countEvents nick evt = length . getEvents nick evt
 
 getEvents :: String -> EventType -> Logfile -> Logfile
-getEvents str evt log = filter (checkEvent str evt) log
+getEvents str = filter . checkEvent str
 
 -- Checks whether the event was correct.
 checkEvent :: String -> EventType -> Logline -> Bool
@@ -55,16 +55,16 @@ matchNick nick (Message ts nick' cont) = nick == nick'
 matchNick _ _ = False
 
 getNicks :: Logfile -> [String]
-getNicks logfile = nub $ map (getNick) (filter (isMessage) logfile)
-  where
-    isMessage (Message _ _ _) = True
-    isMessage _ = False
-    getNick (Message ts nick cont) = nick
-    getNick _ = ""
+getNicks logfile = nub $ map (getNick) (filter isMessage logfile)
+    where
+        isMessage (Message _ _ _) = True
+        isMessage _ = False
+        getNick (Message ts nick cont) = nick
+        getNick _ = ""
 
 buildUsers :: Logfile -> [User]
-buildUsers log = map (buildUser) (getNicks log)
-  where
-    buildUser nick = User nick (countWords nick log) (countLines nick log)
+buildUsers log = map buildUser (getNicks log)
+    where
+        buildUser nick = User nick (countWords nick log) (countLines nick log)
 
 
