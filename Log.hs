@@ -1,4 +1,4 @@
-module LogParser where
+module Log where
 
 import Types
 import Text.ParserCombinators.Parsec
@@ -6,7 +6,7 @@ import Text.ParserCombinators.Parsec
 -- Constants. You shouldn't touch these.
 -- Parses a line into a line.
 decode :: String -> Maybe Logline
-decode = (either (const Nothing) Just) . (parse line "")
+decode = either (const Nothing) Just . parse line ""
 
 -- What defines our line. Usually it's "timestamp event data", the timestamp is ubiquituous.
 
