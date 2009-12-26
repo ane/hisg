@@ -2,10 +2,11 @@ module Log where
 
 import Types
 import Text.ParserCombinators.Parsec
+import Data.List.Split (splitOn)
 
 -- Constants. You shouldn't touch these.
 -- Parses a line into a line.
-decode :: String -> Maybe Logline
+decode :: String -> Maybe LogEvent
 decode = either (const Nothing) Just . parse line ""
 
 -- What defines our line. Usually it's "timestamp event data", the timestamp is ubiquituous.
@@ -21,37 +22,59 @@ parseTimestamp = do
 parseContent :: CharParser st String
 parseContent = anyChar `manyTill` (lookAhead (oneOf "\n"))
 
-line :: CharParser st Logline
+line :: CharParser st LogEvent
 line = do
     try parseEvent
+    <|> try parseKick
+    <|> try parseDayChange
     <|> try parseUserMessage
     <|> try parseNotification
     <?> "Weird line"
 
-parseUserMessage :: CharParser st Logline
+parseUserMessage :: CharParser st LogEvent
 parseUserMessage = do
     ts <- parseTimestamp
     char '<'
     status <- anyChar
-    nickName <- anyChar `manyTill` (lookAhead (oneOf ">"))
+    nickName <- anyChar `manyTill` lookAhead (oneOf ">")
     char '>'
     space
     cont <- parseContent
     return (Message ts nickName cont)
 
-parseNotification :: CharParser st Logline
+parseNotification :: CharParser st LogEvent
 parseNotification = do
     string "--- "
-    cont <- (try parseDayChange <|> parseContent)
+    cont <- parseContent
     return (Notification cont)
 
-parseDayChange :: CharParser st String
+parseDayChange :: CharParser st LogEvent
 parseDayChange = do
-    string "Day changed "
+    string "--- Day changed "
     date <- parseContent
-    return ("DATE CHANGE: "++ date)
+    let items = splitOn " " date
+        [d, m, y] = drop 1 items
+    return (DateChange (Date d m y))
 
-parseEvent :: CharParser st Logline
+parseKick :: CharParser st LogEvent
+parseKick = do
+    ts <- parseTimestamp
+    string "-!-"
+    space
+    target <- many1 letter
+    space
+    string "was kicked from "
+    char '#'
+    many1 letter
+    string " by "
+    author <- many1 letter
+    space
+    char '['
+    reason <- anyChar `manyTill` lookAhead (oneOf "]")
+    char ']'
+    return (KickEvent (Kick ts author target reason))
+
+parseEvent :: CharParser st LogEvent
 parseEvent = do
     ts <- parseTimestamp
     string "-!-"
@@ -64,7 +87,7 @@ parseEvent = do
     string " has "
     evtype <- parseEventType
     param <- parseContent
-    return (LogEvent (Event ts evtype user host param))
+    return (CustomEvent (Event ts evtype user host param))
 
 parseEventType :: CharParser st EventType
 parseEventType = do
@@ -74,6 +97,7 @@ parseEventType = do
         "joined"    -> "JOIN"
         "left"        -> "PART"
         "quit"        -> "QUIT"
+        "changed"     -> "NICK"
         _             -> "")
 
 

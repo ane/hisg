@@ -10,27 +10,35 @@ data Date = Date { date_day    :: String, date_month :: String, date_year :: Str
 data User = User { user_nickname :: String, user_words :: Int, user_line :: Int }
 data Event = Event { event_ts :: Timestamp, event_type :: EventType, event_user :: String, event_host :: String, event_param :: String }
 
-data Logline =
+data Mode = Mode { modeTS :: Timestamp, modeChars :: String, authorHost :: String, targets :: String }
+data Topic = Topic { topicTs :: Timestamp, topicAuthor :: String, topicContent :: String }
+data Kick = Kick { kickTs :: Timestamp, kickAuthor :: String, kickTarget :: String, kickReason :: String }
+
+data LogEvent =
     Message { timestamp :: Timestamp, nickname    :: String, content :: String }
     | Notification String
     | DateChange Date
-    | LogEvent Event
+    | CustomEvent Event
+    | ModeChange Mode
+    | TopicChange Topic
+    | KickEvent Kick
     | Simple String
 
 -- Type aliases
 
-type Logfile = [Logline]
+type Log = [LogEvent]
 type EventType = String
 
 instance Show Timestamp where
     show (Timestamp h m) = printf "%02d:%02d" h m
 
-instance Show Logline where
+instance Show LogEvent where
     show (Message ts nick content) = show ts ++ " " ++ "<" ++ nick ++ ">" ++ " " ++ content
     show (Notification cont) = cont
     show (DateChange (Date d m y)) = intercalate " " [d, m, y]
-    show (LogEvent ev) = show ev
+    show (CustomEvent ev) = show ev
     show (Simple str) = str
+    show (KickEvent (Kick ts author target reason)) = show ts ++ " " ++ author ++ " kicked " ++ target ++ ", reason: " ++ reason
 
 instance Show User where
     show (User nick words lines) = nick ++ " :: " ++ show words ++ " words, " ++ show lines ++ " lines"

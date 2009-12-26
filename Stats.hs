@@ -1,4 +1,13 @@
-module User where
+module Stats (
+    matchNick,
+    getNicks,
+    isMessage,
+    getUserLines,
+    getUserWords,
+    getUserStats,
+    getDates,
+    getKicks
+    ) where
 
 import Data.List
 import Types
@@ -13,7 +22,7 @@ instance Eq User where
 matchNick nick (Message ts nick' cont) = nick == nick'
 matchNick _ _ = False
 
-getNicks :: Logfile -> [String]
+getNicks :: Log -> [String]
 getNicks logfile = nub $ map getNick (filter isMessage logfile)
     where
         getNick (Message ts nick cont) = nick
@@ -22,7 +31,7 @@ getNicks logfile = nub $ map getNick (filter isMessage logfile)
 isMessage (Message _ _ _) = True
 isMessage _ = False
 
-getUserLines :: String -> Logfile -> [String]
+getUserLines :: String -> Log -> [String]
 getUserLines nick logf = map content (filter match logf)
     where
         match line = isMessage line && matchNick nick line
@@ -30,8 +39,19 @@ getUserLines nick logf = map content (filter match logf)
 getUserWords :: [String] -> [String]
 getUserWords = concatMap words
 
-getUserStats :: Logfile -> [User]
+getUserStats :: Log -> [User]
 getUserStats logf = map buildU (getNicks logf)
     where
         buildU nick = let ls = getUserLines nick logf in User nick (length (getUserWords (nub ls))) (length ls)
 
+getDates :: Log -> [LogEvent]
+getDates = filter isDate
+    where
+        isDate (DateChange _) = True
+        isDate _ = False
+
+getKicks :: Log -> [LogEvent]
+getKicks = filter isKick
+    where
+        isKick (KickEvent _) = True
+        isKick _ = False
