@@ -3,6 +3,7 @@ module Log where
 import Types
 import Text.ParserCombinators.Parsec
 import Data.List.Split (splitOn)
+import Data.List
 
 -- Constants. You shouldn't touch these.
 -- Parses a line into a line.
@@ -52,8 +53,13 @@ parseDayChange :: CharParser st LogEvent
 parseDayChange = do
     string "--- Day changed "
     date <- parseContent
-    let items = splitOn " " date
-        [d, m, y] = drop 1 items
+    let items = words date
+        [m', d', y'] = drop 1 items
+        m = case elemIndex m' months of
+                Just x -> x
+                Nothing -> 0
+        d = read d'::Int
+        y = read y'::Int
     return (DateChange (Date d m y))
 
 parseKick :: CharParser st LogEvent

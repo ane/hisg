@@ -9,11 +9,14 @@ import System
 import System.Console.GetOpt
 import System.IO
 
+import Data.List.Split (splitWhen)
+
 import Types
 import Log
 import Stats
 import Misc
 import Formatter
+import Chart
 
 version = "0.1.0"
 
@@ -22,21 +25,37 @@ exactVersion = do putStrLn $ "compiled on " ++ __DATE__ ++ " at " ++ __TIME__
 
 header = "Usage: hessu INPUT OUTPUT"
 
+parseInput :: String -> Log
+parseInput inp = map (fromMaybe (Simple "") . (decode . (++ "\n"))) (lines inp)
+
+splitOnDates :: Log -> [[LogEvent]]
+splitOnDates = splitWhen (isDate)
+    where
+        isDate (DateChange _) = True
+        isDate _ = False
+
 buildOutput input output = do
     showVersion
     putStr $ "Opening file " ++ input ++ "... "
     inp <- readFile input
-    putStrLn "success."
-    putStr "Building stats... "
-    let decoded = map (fromMaybe (Simple "") . (decode . (++ "\n"))) (lines inp)
+    putStrLn "success. Analyzing (this might take a while)."
+    putStr "Compiling stats... "
+    let decoded = parseInput inp
     putStrLn "done."
-    putStr "Writing file... "
     out <- openFile output WriteMode
     writeHeaders out input "style.css" decoded
+    putStr "Writing pertinent graphs and tables... "
+    genLineChartUrl out decoded
     writeUsersTable out (take 25 ((reverse . qsort $ getUserStats decoded)))
+    putStrLn "done."
+    putStr "Writing detailed graphs... "
+    genHourlyChartUrl out decoded
+    putStrLn "done."
+    putStr "Writing miscellaneous stats... "
     writeMiscStats out decoded
+    putStrLn "done."
     hPutStrLn out (footer version)
-    putStrLn " complete."
+    putStrLn "Completed."
     hClose out
 
 main = do

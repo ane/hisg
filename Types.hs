@@ -6,7 +6,7 @@ import Text.Printf
 
 -- Basic types
 data Timestamp = Timestamp { ts_hour :: Int, ts_minute :: Int }
-data Date = Date { date_day    :: String, date_month :: String, date_year :: String }
+data Date = Date { day :: Int, month :: Int, year :: Int }
 data User = User { user_nickname :: String, user_words :: Int, user_line :: Int }
 data Event = Event { event_ts :: Timestamp, event_type :: EventType, event_user :: String, event_host :: String, event_param :: String }
 
@@ -29,13 +29,27 @@ data LogEvent =
 type Log = [LogEvent]
 type EventType = String
 
+months :: [String]
+months = ["Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "Mar",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec"]
+
 instance Show Timestamp where
     show (Timestamp h m) = printf "%02d:%02d" h m
 
 instance Show LogEvent where
     show (Message ts nick content) = show ts ++ " " ++ "<" ++ nick ++ ">" ++ " " ++ content
     show (Notification cont) = cont
-    show (DateChange (Date d m y)) = intercalate " " [d, m, y]
+    show (DateChange (Date d m y)) = intercalate " " (map show [d, m, y])
     show (CustomEvent ev) = show ev
     show (Simple str) = str
     show (KickEvent (Kick ts author target reason)) = show ts ++ " " ++ author ++ " kicked " ++ target ++ ", reason: " ++ reason
