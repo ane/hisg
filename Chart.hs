@@ -116,5 +116,5 @@ genHourlyChartUrl out log = do
         fills = map (\(idx, col) -> printf "b,%s,%d,%d,0" col (idx::Int) ((idx+1)::Int)) (zip [0..] colors)
         dsets = intercalate "|" . map genDataSet . reverse . conv5 . unzip5 . map conv5' . map (scanl (+) 0) $ weeks
         url = printf "http://chart.apis.google.com/chart?cht=lc&chds=0,100&chs=500x250&chxt=y,x,x&chxp=0,100|2,100&chxl=0:|100%%|2:|Month|&chdl=18-24|12-18|06-12|00-06&chco=%s&chm=%s&chd=t:%s" cols (intercalate "|" fills) dsets
-    hPutStrLn out "<h2>Monthly activity distribution, by hours</h2>"
+    hPutStrLn out "<h2>Monthly activity distribution by hours</h2>"
     hPutStrLn out $ "<img src=\"" ++ url ++ "\"/>"
