@@ -1,3 +1,21 @@
+-- Hessu - IRC stats generator.
+--
+-- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
+-- All rights reserved.
+--
+-- Redistribution and use in source and binary forms, with or without
+-- modification, are permitted provided that the following conditions are met:
+--     * Redistributions of source code must retain the above copyright
+--       notice, this list of conditions and the following disclaimer.
+--     * Redistributions in binary form must reproduce the above copyright
+--       notice, this list of conditions and the following disclaimer in the
+--       documentation and/or other materials provided with the distribution.
+--     * Neither the name of the author nor the
+--       names of its contributors may be used to endorse or promote products
+--       derived from this software without specific prior written permission.
+--
+-- For further details, see LICENSE.
+
 module Formatter where
 
 import Types
@@ -26,28 +44,31 @@ writeMiscStats out logf = do
     let kicks = getKicks logf
         kickers = common (map getKicker kicks)
         kickeds = common (map getKicked kicks)
-        topkicker = head kickers
-        sndkicker = kickers !! 1
-        topkicked = head kickeds
-        sndkicked = kickeds !! 1
 
     hPutStrLn out "<h2>Miscellaneous stats</h2>\n<table>"
-    if not . null $ topkicker
+    if length kickers > 0
         then do
+            let topkicker = head kickers
+                topkicked = head kickeds
             hPutStrLn out $ "<tr><td><b>" ++ head topkicker ++ "</b> acted as the channel judge. He kicked a total of <b>" ++ show (length topkicker) ++ "</b> people!<br/>"
-            if not . null $ sndkicker
-                then do hPutStrLn out $ "His lieutenant, <b>" ++ head sndkicker ++ "</b>, assisted with <b>" ++ show (length sndkicker) ++ "</b> kicks!</td></tr>"
-                else do hPutStrLn out "No one else kicked people in the channel."
+            if length kickers > 1
+                then do
+                    let sndkicker = kickers !! 1
+                    hPutStrLn out $ "His lieutenant, <b>" ++ head sndkicker ++ "</b>, assisted with <b>" ++ show (length sndkicker) ++ "</b> kicks!</td></tr>"
+                else do
+                    hPutStrLn out "No one else kicked people in the channel."
             hPutStrLn out $ "<tr><td>Nobody liked <b>" ++ head topkicked ++ "</b>. He got kicked " ++ show (length topkicked) ++ "</b> times!<br/>"
-            if not . null $ sndkicked
-                then do hPutStrLn out $ "<b>" ++ head sndkicked ++ "</b> came second on the loser chart, getting kicked " ++ show (length sndkicked) ++ "</b> times!<br/></td></tr>"
-                else do hPutStrLn out "He was the only to get kicked!"
-        else do putStrLn "Nobody kicked anyone during this period."
+            if length kickeds > 1
+                then do
+                    let sndkicked = kickeds !! 1
+                    hPutStrLn out $ "<b>" ++ head sndkicked ++ "</b> came second on the loser chart, getting kicked " ++ show (length sndkicked) ++ "</b> times!<br/></td></tr>"
+                else do hPutStrLn out "He was the only one to get kicked!"
+        else do hPutStrLn out "<tr><td>Nobody kicked anyone during this period.</td></tr>"
 
     hPutStrLn out "</table>"
-    where
-        getKicked (KickEvent (Kick _ _ kicked _)) = kicked
-        getKicker (KickEvent (Kick _ kicker _ _)) = kicker
+
+getKicked (KickEvent k) = kickTarget k
+getKicker (KickEvent k) = kickAuthor k
 
 footer :: String -> String
 footer ver = "<p>Generated with <a href=\"http://code.google.com/p/hessu\">Hessu</a> v" ++ ver ++ "</p></body></html>"

@@ -1,3 +1,21 @@
+-- Hessu - IRC stats generator.
+--
+-- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
+-- All rights reserved.
+--
+-- Redistribution and use in source and binary forms, with or without
+-- modification, are permitted provided that the following conditions are met:
+--     * Redistributions of source code must retain the above copyright
+--       notice, this list of conditions and the following disclaimer.
+--     * Redistributions in binary form must reproduce the above copyright
+--       notice, this list of conditions and the following disclaimer in the
+--       documentation and/or other materials provided with the distribution.
+--     * Neither the name of the author nor the
+--       names of its contributors may be used to endorse or promote products
+--       derived from this software without specific prior written permission.
+--
+-- For further details, see LICENSE.
+
 module Chart where
 
 import Data.List
@@ -56,6 +74,7 @@ proportionHours hours = (tot, h $ map prop hours)
 analyzeHourly :: Int -> Log -> [[Int]]
 analyzeHourly interval log = calcAverages . catenateRows . chunk interval . toDailyHours $ (getDays log)
     where
+        -- The moment I wrote this I knew my soul was damned forever.
         calcAverages = map (map (round . (*100) . avg))
         catenateRows = map (conv4 . unzip4 . snd . unzip)
         toDailyHours = map (proportionHours . spliceDay)
@@ -82,20 +101,20 @@ genDataSet xs = intercalate "," (map show xs)
 
 genLineChartUrl out log = do
     let days = getDays log
-        crunched = analyzeLineTrend days 1
+        crunched = analyzeLineTrend days 30
         ylegend = intercalate "|" (map show [1 .. length crunched])
         dayLines = map length days
         biggest = maximum dayLines
         average = (round $ fromIntegral (sum dayLines) / fromIntegral (length dayLines)) :: Int
-        url = printf "http://chart.apis.google.com/chart?cht=lc&chs=500x250&chm=B,008B8B,0,0,0&chd=t:%s&chco=445588&chxt=y,y,x,x,r&chxl=0:|lines|1:|%d|2:|%s|3:|Week|4:|average %d lines|&chxtc=4,-500&chxp=0,100|1,100|4,%d&chxs=4,445588,13,-1,lt,990000" (genDataSet crunched) biggest ylegend average ((round (100 * (fromIntegral average / fromIntegral biggest))) :: Int)
-    hPutStrLn out "<h2>Activity by time</h2>"
+        url = printf "http://chart.apis.google.com/chart?cht=lc&chs=500x250&chm=B,008B8B,0,0,0&chd=t:%s&chco=445588&chxt=y,y,x,x,r&chxl=0:|lines|1:|%d|2:|%s|3:|Month|4:|average %d lines|&chxtc=4,-500&chxp=0,100|1,100|3,50|4,%d&chxs=4,445588,13,-1,lt,990000" (genDataSet crunched) biggest ylegend average ((round (100 * (fromIntegral average / fromIntegral biggest))) :: Int)
+    hPutStrLn out "<h2>Activity chart</h2>"
     hPutStrLn out $ "<img src=\"" ++ url ++ "\"/>"
 
 genHourlyChartUrl out log = do
-    let weeks = analyzeHourly 7 log
+    let weeks = analyzeHourly 30 log
         cols = intercalate "," colors
         fills = map (\(idx, col) -> printf "b,%s,%d,%d,0" col (idx::Int) ((idx+1)::Int)) (zip [0..] colors)
         dsets = intercalate "|" . map genDataSet . reverse . conv5 . unzip5 . map conv5' . map (scanl (+) 0) $ weeks
-        url = printf "http://chart.apis.google.com/chart?cht=lc&chds=0,100&chs=500x250&chxt=x&chxp=0,100|1,50chxl=0:|100%%|1:|Time|&chdl=18-24|12-18|06-12|00-06&chco=%s&chm=%s&chd=t:%s" cols (intercalate "|" fills) dsets
-    hPutStrLn out "<h2>Hourly activity distribution by time</h2>"
+        url = printf "http://chart.apis.google.com/chart?cht=lc&chds=0,100&chs=500x250&chxt=y,x,x&chxp=0,100|2,100&chxl=0:|100%%|2:|Month|&chdl=18-24|12-18|06-12|00-06&chco=%s&chm=%s&chd=t:%s" cols (intercalate "|" fills) dsets
+    hPutStrLn out "<h2>Monthly activity distribution</h2>"
     hPutStrLn out $ "<img src=\"" ++ url ++ "\"/>"
