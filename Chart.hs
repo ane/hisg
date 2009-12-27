@@ -28,7 +28,7 @@ import Types
 import Stats
 
 colors :: [String]
-colors = ["CC9900", "445588", "990000", "336600"]
+colors = ["CCFFCC", "66CCFF", "0066FF", "0000CC"]
 
 getDays :: Log -> [[LogEvent]]
 getDays = splitWhen isDate
@@ -101,17 +101,25 @@ genDataSet xs = intercalate "," (map show xs)
 
 genLineChartUrl out log = do
     let days = getDays log
-        crunched = analyzeLineTrend days 30
+        crunched = analyzeLineTrend days 7
         ylegend = intercalate "|" (map show [1 .. length crunched])
         dayLines = map length days
         biggest = maximum dayLines
         average = (round $ fromIntegral (sum dayLines) / fromIntegral (length dayLines)) :: Int
-        url = printf "http://chart.apis.google.com/chart?cht=lc&chs=500x250&chm=B,008B8B,0,0,0&chd=t:%s&chco=445588&chxt=y,y,x,x,r&chxl=0:|lines|1:|%d|2:|%s|3:|Month|4:|average %d lines|&chxtc=4,-500&chxp=0,100|1,100|3,50|4,%d&chxs=4,445588,13,-1,lt,990000" (genDataSet crunched) biggest ylegend average ((round (100 * (fromIntegral average / fromIntegral biggest))) :: Int)
-    hPutStrLn out "<h2>Average lines per month</h2>"
-    hPutStrLn out $ "<img src=\"" ++ url ++ "\"/>"
+        prop = ((round (100 * (fromIntegral average / fromIntegral biggest))) :: Int)
+
+    hPutStrLn out $ "<h2>Average lines per month</h2>" ++
+                    "<img src=\"" ++
+                    "http://chart.apis.google.com/chart?" ++
+                    "cht=lc&chs=500x250&chm=B,008B8B,0,0,0&chd=t:" ++
+                    (genDataSet crunched) ++
+                    "&chco=445588&chxt=y,y,x,x,r&chxl=0:|lines|1:|" ++
+                    show biggest ++ "|2:|" ++ ylegend ++ "|3:|Month|4:|average " ++
+                    show average ++ " lines|&chxtc=4,-500&chxp=0,100|1,100|3,50|4," ++ show prop ++
+                    "&chxs=4,445588,13,-1,lt,990000\"/>"
 
 genHourlyChartUrl out log = do
-    let weeks = analyzeHourly 30 log
+    let weeks = analyzeHourly 7 log
         cols = intercalate "," colors
         fills = map (\(idx, col) -> printf "b,%s,%d,%d,0" col (idx::Int) ((idx+1)::Int)) (zip [0..] colors)
         dsets = intercalate "|" . map genDataSet . reverse . conv5 . unzip5 . map conv5' . map (scanl (+) 0) $ weeks
