@@ -55,7 +55,8 @@ splitOnDates = splitWhen (isDate)
 buildOutput input output = do
     showVersion
     putStr $ "Opening file " ++ input ++ "... "
-    inp <- readFile input
+    infile <- openFile input ReadMode
+    inp <- hGetContents infile
     putStrLn "success. Analyzing (this might take a while)."
     putStr "Compiling stats... "
     let decoded = parseInput inp

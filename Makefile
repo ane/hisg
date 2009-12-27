@@ -5,7 +5,7 @@ MAIN = hessu
 all: $(MAIN)
 
 $(MAIN):
-	$(GHC) --make Main -o $(MAIN)
+	$(GHC) -O2 --make Main -o $(MAIN)
 
 clean:
 	del *.o
