@@ -18,7 +18,8 @@ writeHeaders out chan stylesheet logf = do
 
 writeUsersTable :: Handle -> [User] -> IO ()
 writeUsersTable out users = do
-    hPutStrLn out $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ "</b> " ++ user_nickname u ++ "</td><td>" ++ show (user_line u) ++ "</td><td>" ++ show (user_words u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+    hPutStrLn out "<h2>Top 25 users</h2>"
+    hPutStrLn out $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ user_nickname u ++ "</td><td>" ++ show (user_line u) ++ "</td><td>" ++ show (user_words u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
 
 writeMiscStats :: Handle -> Log -> IO ()
 writeMiscStats out logf = do
