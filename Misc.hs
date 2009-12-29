@@ -17,7 +17,7 @@
 -- For further details, see LICENSE.
 
 module Misc (
-    qsort,
+    invqsort,
     common,
     mostCommon,
     cmp
@@ -25,15 +25,15 @@ module Misc (
 
 import Data.List
 
-qsort [] = []
-qsort (x:xs) = qsort (filter (< x) xs) ++ [x] ++ qsort (filter (>= x) xs)
+invqsort [] = []
+invqsort (x:xs) = invqsort (filter (>= x) xs) ++ [x] ++ invqsort (filter (< x) xs)
 
 cmp xs ys | length xs > length ys = LT
           | otherwise = GT
 
 common :: (Ord a) => [a] -> [[a]]
 common [] = []
-common xs = let sorted = qsort xs in sortBy cmp $ group $ sorted
+common xs = let sorted = (reverse . invqsort) xs in sortBy cmp $ group $ sorted
 
 mostCommon [] = []
 mostCommon list@(x:xs) = head . common $ list
