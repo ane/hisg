@@ -53,6 +53,7 @@ splitOnDates = splitWhen (isDate)
         isDate _ = False
 
 buildOutput input output = do
+    let interval = "week"
     showVersion
     putStr $ "Opening file " ++ input ++ "... "
     infile <- openFile input ReadMode
@@ -64,11 +65,11 @@ buildOutput input output = do
     out <- openFile output WriteMode
     writeHeaders out input "style.css" decoded
     putStr "Writing pertinent graphs and tables... "
-    genLineChartUrl out decoded
-    writeUsersTable out (take 25 ((reverse . qsort $ getUserStats decoded)))
+    genLineChartUrl out decoded interval
+    writeUsersTable out (take 25 (invqsort $ getUserStats decoded))
     putStrLn "done."
     putStr "Writing detailed graphs... "
-    genHourlyChartUrl out decoded
+    genHourlyChartUrl out decoded interval
     putStrLn "done."
     putStr "Writing miscellaneous stats... "
     writeMiscStats out decoded
