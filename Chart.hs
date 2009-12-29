@@ -139,7 +139,7 @@ genHourlyChartUrl :: Handle -> Log -> String -> IO ()
 genHourlyChartUrl out log interval = do
     let weeks = analyzeHourly log interval
         cols = intercalate "," colors
-        fills = map (\(idx, col) -> printf "b,%s,%d,%d,0" col (idx :: Int) (idx + 1 :: Int) (zip [0..] colors)
+        fills = map (\(idx, col) -> printf "b,%s,%d,%d,0" col (idx :: Int) (idx + 1 :: Int)) (zip [0..] colors)
         dsets = intercalate "|" . map genDataSet . reverse . conv5 . unzip5 . map (conv5' . scanl (+) 0) $ weeks
         url = printf "http://chart.apis.google.com/chart?cht=lc&chds=0,100&chs=500x250&chxt=y,x,x&chxp=0,100|2,100&chxl=0:|100%%|2:|%s|&chdl=18-24|12-18|06-12|00-06&chco=%s&chm=%s&chd=t:%s" interval cols (intercalate "|" fills) dsets
     hPutStrLn out "<h2>Monthly activity distribution by hours</h2>"
