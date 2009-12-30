@@ -1,0 +1,14 @@
+Name:                   hisg
+Version:                0.1.0
+Description:            IRC statistics generator
+License:                BSD3
+License-file:           LICENSE
+Author:                 Antoine Kalmbach
+Maintainer:             antoine.kalmbach@jyu.fi
+Build-Type:             Simple
+Cabal-Version:          >=1.2
+
+Executable program1
+  Build-Depends:    parsec, split
+  Main-Is:          Hisg.hs
+  Hs-Source-Dirs:   src

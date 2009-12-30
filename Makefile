@@ -2,11 +2,9 @@ GHC = ghc
 
 MAIN = hisg
 
-all: $(MAIN)
-
-$(MAIN):
-	$(GHC) -O2 --make Main -o $(MAIN)
+all:
+	$(GHC) -O2 --make Hisg -o $(MAIN)
 
 clean:
-	del *.o
-	del *.hi
+	rm *.o Hisg/*.o
+	rm *.hi Hisg/*.hi
