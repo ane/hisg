@@ -41,7 +41,7 @@ matchNick nick (Message _ nick' _) = nick == nick'
 matchNick _ _ = False
 
 getNicks :: Log -> [String]
-getNicks logfile = nub [ nick | Message _ nick _ <- (filter isMessage logfile)]
+getNicks logfile = nub [ nick | Message _ nick _ <- filter isMessage logfile]
 
 isMessage (Message _ _ _) = True
 isMessage _ = False
@@ -55,7 +55,7 @@ getUserWords :: [String] -> [String]
 getUserWords = concatMap words
 
 getUserStats :: Log -> [User]
-getUserStats logf = map buildU (getNicks logf)
+getUserStats logf = buildU `fmap` getNicks logf
     where
         buildU nick = let ls = getUserLines nick logf in User nick (length (getUserWords ls)) (length ls)
 
