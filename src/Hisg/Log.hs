@@ -16,12 +16,13 @@
 --
 -- For further details, see LICENSE.
 
-module Log where
+module Hisg.Log where
 
-import Types
 import Text.ParserCombinators.Parsec
 import Data.List.Split (splitOn)
 import Data.List
+
+import Hisg.Types
 
 -- Constants. You shouldn't touch these.
 -- Parses a line into a line.

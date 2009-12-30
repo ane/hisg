@@ -16,7 +16,7 @@
 --
 -- For further details, see LICENSE.
 
-module Stats (
+module Hisg.Stats (
     matchNick,
     getNicks,
     isMessage,
@@ -28,7 +28,8 @@ module Stats (
     ) where
 
 import Data.List
-import Types
+
+import Hisg.Types
 
 instance Ord User where
   (User n1 w1 l1) <= (User n2 w2 l2) = l1 <= l2
