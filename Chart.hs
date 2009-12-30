@@ -1,4 +1,4 @@
--- Hessu - IRC stats generator.
+-- hisg - IRC stats generator.
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
@@ -121,7 +121,7 @@ genLineChartUrl out log interval = do
         average = round $ fromIntegral (sum dayLines) / fromIntegral (length dayLines) :: Int
         prop = round (100 * (fromIntegral average / fromIntegral biggest)) :: Int
 
-    hPutStrLn out $ "<h2>Average lines per "++interval++"</h2>" ++
+    hPutStrLn out $ "<h2>Average messages per day</h2>" ++
                     "<img src=\"" ++
                     "http://chart.apis.google.com/chart?" ++
                     "&chm=B,66CCFF,0,1,0" ++
@@ -142,5 +142,5 @@ genHourlyChartUrl out log interval = do
         fills = map (\(idx, col) -> printf "b,%s,%d,%d,0" col (idx :: Int) (idx + 1 :: Int)) (zip [0..] colors)
         dsets = intercalate "|" . map genDataSet . reverse . conv5 . unzip5 . map (conv5' . scanl (+) 0) $ weeks
         url = printf "http://chart.apis.google.com/chart?cht=lc&chds=0,100&chs=500x250&chxt=y,x,x&chxp=0,100|2,100&chxl=0:|100%%|2:|%s|&chdl=18-24|12-18|06-12|00-06&chco=%s&chm=%s&chd=t:%s" interval cols (intercalate "|" fills) dsets
-    hPutStrLn out "<h2>Monthly activity distribution by hours</h2>"
+    hPutStrLn out "<h2>Message distribution by hours</h2>"
     hPutStrLn out $ "<img src=\"" ++ url ++ "\"/>"

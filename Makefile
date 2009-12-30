@@ -1,6 +1,6 @@
 GHC = ghc
 
-MAIN = hessu
+MAIN = hisg
 
 all: $(MAIN)
 

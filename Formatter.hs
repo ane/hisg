@@ -1,4 +1,4 @@
--- Hessu - IRC stats generator.
+-- hisg - IRC stats generator.
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
@@ -71,4 +71,4 @@ getKicked (KickEvent k) = kickTarget k
 getKicker (KickEvent k) = kickAuthor k
 
 footer :: String -> String
-footer ver = "<p>Generated with <a href=\"http://code.google.com/p/hessu\">Hessu</a> v" ++ ver ++ "</p></body></html>"
+footer ver = "<p>Generated with <a href=\"http://anhekalm.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></body></html>"
