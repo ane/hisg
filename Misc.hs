@@ -1,4 +1,4 @@
--- Hessu - IRC stats generator.
+-- hisg - IRC stats generator.
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
