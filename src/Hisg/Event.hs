@@ -16,7 +16,7 @@
 --
 -- For further details, see LICENSE.
 
-module Event (
+module Hisg.Event (
         countEvents,
         getEvents,
         checkEvent

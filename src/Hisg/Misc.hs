@@ -16,7 +16,7 @@
 --
 -- For further details, see LICENSE.
 
-module Misc (
+module Hisg.Misc (
     invqsort,
     common,
     mostCommon,

@@ -7,8 +7,10 @@ Author:                 Antoine Kalmbach
 Maintainer:             antoine.kalmbach@jyu.fi
 Build-Type:             Simple
 Cabal-Version:          >=1.2
+extra-source-files:     README
 
-Executable program1
-  Build-Depends:    parsec, split
+Executable hisg
+  Build-Depends:    parsec, split, base >= 4, haskell98
   Main-Is:          Hisg.hs
   Hs-Source-Dirs:   src
+

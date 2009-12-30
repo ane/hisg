@@ -16,7 +16,7 @@
 --
 -- For further details, see LICENSE.
 
-module Chart where
+module Hisg.Chart where
 
 import Data.List
 import Data.List.Split
@@ -25,8 +25,8 @@ import Control.Monad
 import Text.Printf
 import System.IO
 
-import Types
-import Stats
+import Hisg.Types
+import Hisg.Stats
 
 type Interval = String
 
