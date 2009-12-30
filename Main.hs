@@ -69,7 +69,7 @@ buildOutput input output = do
     writeHeaders out input "style.css" decoded
     putStr "Writing pertinent graphs and tables... "
     genLineChartUrl out decoded interval
-    writeUsersTable out (take 25 (invqsort $ getUserStats decoded))
+    writeUsersTable out (take 25 (reverse . sort $ getUserStats decoded))
     putStrLn "done."
     putStr "Writing detailed graphs... "
     genHourlyChartUrl out decoded interval
