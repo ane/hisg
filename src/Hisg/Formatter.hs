@@ -16,13 +16,14 @@
 --
 -- For further details, see LICENSE.
 
-module Formatter where
+module Hisg.Formatter where
 
-import Types
 import System.IO
-import Stats
-import Misc
 import Data.List
+
+import Hisg.Types
+import Hisg.Stats
+import Hisg.Misc
 
 writeHeaders :: Handle -> String -> String -> Log -> IO ()
 writeHeaders out chan stylesheet logf = do

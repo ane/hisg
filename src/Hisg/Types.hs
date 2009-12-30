@@ -16,7 +16,7 @@
 --
 -- For further details, see LICENSE.
 
-module Types where
+module Hisg.Types where
 
 import Data.List
 import Data.Char
