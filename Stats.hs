@@ -1,4 +1,4 @@
--- Hessu - IRC stats generator.
+-- hisg - IRC stats generator.
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
@@ -37,14 +37,11 @@ instance Ord User where
 instance Eq User where
   (User n1 w1 l1) == (User n2 w2 l2) = n1 == n2 && w1 == w2 && l1 == l2
 
-matchNick nick (Message ts nick' cont) = nick == nick'
+matchNick nick (Message _ nick' _) = nick == nick'
 matchNick _ _ = False
 
 getNicks :: Log -> [String]
-getNicks logfile = nub $ map getNick (filter isMessage logfile)
-    where
-        getNick (Message ts nick cont) = nick
-        getNick _ = ""
+getNicks logfile = nub [ nick | Message _ nick _ <- (filter isMessage logfile)]
 
 isMessage (Message _ _ _) = True
 isMessage _ = False
@@ -60,7 +57,7 @@ getUserWords = concatMap words
 getUserStats :: Log -> [User]
 getUserStats logf = map buildU (getNicks logf)
     where
-        buildU nick = let ls = getUserLines nick logf in User nick (length (getUserWords (nub ls))) (length ls)
+        buildU nick = let ls = getUserLines nick logf in User nick (length (getUserWords ls)) (length ls)
 
 getDates :: Log -> [LogEvent]
 getDates = filter isDate

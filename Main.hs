@@ -1,4 +1,4 @@
--- Hessu - IRC stats generator.
+-- hisg - IRC stats generator.
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
@@ -38,13 +38,16 @@ import Chart
 
 version = "0.1.0"
 
-showVersion = do putStrLn $ "hessu v" ++ version
+showVersion = do putStrLn $ "hisg v" ++ version
 exactVersion = do putStrLn $ "compiled on " ++ __DATE__ ++ " at " ++ __TIME__
 
-header = "Usage: hessu INPUT OUTPUT"
+header = "Usage: hisg INPUT OUTPUT"
 
 parseInput :: String -> Log
 parseInput inp = map (fromMaybe (Simple "") . (decode . (++ "\n"))) (lines inp)
+
+--parseInput :: String -> Log
+--parseInput inp = map (decode . (++ "\n")) (lines inp)
 
 splitOnDates :: Log -> [[LogEvent]]
 splitOnDates = splitWhen (isDate)
@@ -53,7 +56,7 @@ splitOnDates = splitWhen (isDate)
         isDate _ = False
 
 buildOutput input output = do
-    let interval = "week"
+    let interval = "month"
     showVersion
     putStr $ "Opening file " ++ input ++ "... "
     infile <- openFile input ReadMode
