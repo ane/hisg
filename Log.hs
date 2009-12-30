@@ -1,4 +1,4 @@
--- Hessu - IRC stats generator.
+-- hisg - IRC stats generator.
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
@@ -85,13 +85,13 @@ parseKick = do
     ts <- parseTimestamp
     string "-!-"
     space
-    target <- many1 letter
+    target <- anyChar `manyTill` lookAhead space
     space
     string "was kicked from "
     char '#'
     anyChar `manyTill` lookAhead (oneOf " ")
     string " by "
-    author <- many1 letter
+    author <- anyChar `manyTill` lookAhead space
     space
     char '['
     reason <- anyChar `manyTill` lookAhead (oneOf "]")
