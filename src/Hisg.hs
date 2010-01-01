@@ -16,25 +16,21 @@
 --
 -- For further details, see LICENSE.
 
-{-# OPTIONS_GHC -cpp #-}
+{-# OPTIONS_GHC -cpp -fglasgow-exts #-}
 {-# LANGUAGE CPP #-}
 
 module Main where
 
-import Data.List
 import Data.Maybe
-import System
 import System.Console.GetOpt
 import System.IO
 
-import Data.List.Split (splitWhen)
+import Control.Monad
+import Control.Monad.Trans
+import Control.Monad.State.Lazy
 
-import Hisg.Types
-import Hisg.Log
-import Hisg.Stats
-import Hisg.Misc
-import Hisg.Formatter
-import Hisg.Chart
+import Hisg.Core
+import Hisg.IRCLog
 
 version = "0.1.0"
 
@@ -43,53 +39,22 @@ exactVersion = do putStrLn $ "compiled on " ++ __DATE__ ++ " at " ++ __TIME__
 
 header = "Usage: hisg INPUT OUTPUT"
 
-parseInput :: String -> Log
-parseInput inp = map (fromMaybe (Simple "") . (decode . (++ "\n"))) (lines inp)
-
---parseInput :: String -> Log
---parseInput inp = map (decode . (++ "\n")) (lines inp)
-
-splitOnDates :: Log -> [[LogEvent]]
-splitOnDates = splitWhen (isDate)
-    where
-        isDate (DateChange _) = True
-        isDate _ = False
-
-buildOutput input output = do
-    let interval = "month"
-    showVersion
-    putStr $ "Opening file " ++ input ++ "... "
-    infile <- openFile input ReadMode
-    inp <- hGetContents infile
-    putStrLn "success. Analyzing (this might take a while)."
-    putStr "Compiling stats... "
-    let decoded = parseInput inp
-    putStrLn "done."
-    out <- openFile output WriteMode
-    writeHeaders out input "style.css" decoded
-    putStr "Writing pertinent graphs and tables... "
-    genLineChartUrl out decoded interval
-    writeUsersTable out (take 25 (reverse . sort $ getUserStats decoded))
-    putStrLn "done."
-    putStr "Writing detailed graphs... "
-    genHourlyChartUrl out decoded interval
-    putStrLn "done."
-    putStr "Writing miscellaneous stats... "
-    writeMiscStats out decoded
-    putStrLn "done."
-    hPutStrLn out (footer version)
-    putStrLn "Completed."
-    hClose out
-
+runHisg :: HisgM ()
+runHisg = do
+    loadFile "sekopaat.log"
+    processFiles
 
 main = do
-    argv <- getArgs
-    case argv of
-        []              -> buildOutput "sekopaat.log" "seko.html" --showVersion >> putStrLn header
-        ["-v"]          -> showVersion >> exactVersion
-        ["--version"]   -> showVersion >> exactVersion
-        _               -> buildOutput (head argv) (last argv)
+    showVersion
+    runStateT runHisg (Hisg [])
 
+--    argv <- getArgs
+--    case argv of
+--        []              -> buildOutput "sekopaat.log" "seko.html" --showVersion >> putStrLn header
+--        ["-v"]          -> showVersion >> exactVersion
+--        ["--version"]   -> showVersion >> exactVersion
+--        _               -> buildOutput (head argv) (last argv)
+--
     --file <- readFile "suomipelit.log"
     --let decoded = map (fromMaybe (Simple "") . (decode . (++ "\n"))) (lines file)
     --putStrLn (intercalate "\n" (map (show) (reverse $ qsort (getUserStats decoded))))

@@ -25,8 +25,8 @@ import Text.Printf
 -- Basic types
 data Timestamp = Timestamp { ts_hour :: Int, ts_minute :: Int }
 data Date = Date { day :: Int, month :: Int, year :: Int }
-data User = User { user_nickname :: String, user_words :: Int, user_line :: Int }
-data Event = Event { event_ts :: Timestamp, event_type :: EventType, event_user :: String, event_host :: String, event_param :: String }
+data User = User { userNick :: String, userWords :: Int, userLines :: Int }
+data Event = Event { eventTimestamp :: Timestamp, eventType :: EventType, eventUser :: String, eventHost :: String, eventParam :: String }
 
 data Mode = Mode { modeTS :: Timestamp, modeChars :: String, authorHost :: String, targets :: String }
 data Topic = Topic { topicTs :: Timestamp, topicAuthor :: String, topicContent :: String }
