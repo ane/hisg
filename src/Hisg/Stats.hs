@@ -17,17 +17,21 @@
 -- For further details, see LICENSE.
 
 module Hisg.Stats (
-    matchNick,
-    getNicks,
     isMessage,
-    getUserLines,
-    getUserWords,
-    getUserStats,
     getDates,
-    getKicks
+    getKicks,
+    calcMessageStats,
+    processMessages,
+    countNicks,
     ) where
 
 import Data.List
+import Data.Array (elems)
+import Data.Array.ST
+import Data.STRef
+import Data.Maybe
+import Control.Monad
+import Control.Monad.ST
 
 import Hisg.Types
 
@@ -38,27 +42,64 @@ instance Ord User where
 instance Eq User where
   (User n1 w1 l1) == (User n2 w2 l2) = n1 == n2 && w1 == w2 && l1 == l2
 
-matchNick nick (Message _ nick' _) = nick == nick'
-matchNick _ _ = False
+data AnalyzerM a =  A (Log -> [(a, Log)])
 
-getNicks :: Log -> [String]
-getNicks logfile = nub [ nick | Message _ nick _ <- filter isMessage logfile]
+runAnalyzer (A a) log = a log
+
+-- | Tests the next event against the function f.
+analyzePred :: (LogEvent -> Bool) -> AnalyzerM LogEvent
+analyzePred f = A p
+    where
+        p [] = []
+        p (x:xs) | f x = [(x, xs)]
+                 | otherwise = []
+
+event :: EventType -> AnalyzerM LogEvent
+event evt = analyzePred $ checkEvent evt
+
+kick :: AnalyzerM LogEvent
+kick = analyzePred isKick
+
+message :: AnalyzerM LogEvent
+message = analyzePred isMessage
+
+checkEvent t (CustomEvent e) = eventType e == t
+checkEvent _ _ = False
+
+isKick (KickEvent _) = True
+isKick _ = False
+
+isEvent (CustomEvent _) = True
+isEvent _ = False
 
 isMessage (Message _ _ _) = True
 isMessage _ = False
 
-getUserLines :: String -> Log -> [String]
-getUserLines nick logf = map content (filter match logf)
+calcMessageStats :: Log -> [User]
+calcMessageStats logf = buildU `fmap` (processMessages logf)
     where
-        match line = isMessage line && matchNick nick line
+        buildU (n, l, w) = User n l w
 
-getUserWords :: [String] -> [String]
-getUserWords = concatMap words
+countNicks log = runST $ do
+    users <- newSTRef [""]
+    forM_ log $ \msg -> do
+        let n = nickname msg
+        l <- readSTRef users
+        when (isMessage msg && n `notElem` l) $ modifySTRef users (\xs -> xs++[n])
+    readSTRef users
 
-getUserStats :: Log -> [User]
-getUserStats logf = buildU `fmap` getNicks logf
-    where
-        buildU nick = let ls = getUserLines nick logf in User nick (length (getUserWords ls)) (length ls)
+processMessages log = runST $ do
+    nicks <- return (countNicks log)
+    users <- newArray (0, length nicks) ("", 0,0) :: ST s (STArray s Int (String, Int,Int))
+    forM_ log $ \msg -> do
+        when (isMessage msg) $ do
+            let nick = nickname msg
+            let ni = nindex nick nicks
+            (n_, l_, w_) <- readArray users ni
+            writeArray users ni (nick, l_ + 1, w_ + (length $ words (content msg)))
+    getElems users
+        where
+            nindex i xs = fromMaybe 666 (i `elemIndex` xs)
 
 getDates :: Log -> [LogEvent]
 getDates = filter isDate

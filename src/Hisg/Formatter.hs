@@ -27,18 +27,18 @@ import Hisg.Misc
 
 writeHeaders :: Handle -> String -> String -> Log -> IO ()
 writeHeaders out chan stylesheet logf = do
-    let dates = getDates logf
+    --let dates = getDates logf
     hPutStrLn out $ "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
     hPutStrLn out $ "<link rel=\"stylesheet\" type=\"text/css\" href=\"" ++ stylesheet ++ "\" />"
     hPutStrLn out "</style>\n<body>\n"
     hPutStrLn out $ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1>"
-    hPutStrLn out $ "<p>Data from " ++ show (head dates) ++ " &mdash; " ++ show (last dates) ++ "<br/>"
-    hPutStrLn out $ "A total of " ++ show (length logf) ++ " lines were spoken during this period.</p>"
+    --hPutStrLn out $ "<p>Data from " ++ show (head dates) ++ " &mdash; " ++ show (last dates) ++ "<br/>"
+    --hPutStrLn out $ "A total of " ++ show (length logf) ++ " lines were spoken during this period.</p>"
 
 writeUsersTable :: Handle -> [User] -> IO ()
 writeUsersTable out users = do
     hPutStrLn out "<h2>Top 25 users</h2>"
-    hPutStrLn out $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ user_nickname u ++ "</td><td>" ++ show (user_line u) ++ "</td><td>" ++ show (user_words u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+    hPutStrLn out $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ userNick u ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
 
 writeMiscStats :: Handle -> Log -> IO ()
 writeMiscStats out logf = do

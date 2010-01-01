@@ -16,7 +16,17 @@
 --
 -- For further details, see LICENSE.
 
-module Hisg.Log where
+module Hisg.Parser (
+    decode,
+    parseTimestamp,
+    parseContent,
+    parseUserMessage,
+    parseNotification,
+    parseEventType,
+    parseEvent,
+    parseDayChange,
+    line
+    ) where
 
 import Text.ParserCombinators.Parsec
 import Data.List.Split (splitOn)
