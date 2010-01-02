@@ -43,7 +43,7 @@ data HisgChange = ParseFile IRCLog
 addFile :: IRCLog -> HisgM ()
 addFile l = do
     hst <- get
-    put $ Hisg $ l : (files hst)
+    put $ Hisg $ l : files hst
 
 -- | Gets a file from the parsing bucket. Names are unique.
 getFile :: String -> HisgM (Maybe IRCLog)
@@ -71,14 +71,14 @@ formatLog fn outf = do
 loadFile :: String -> HisgM ()
 loadFile inp = do
     logf <- liftIO $ do
-        putStrLn $ "Load: " ++ inp
+        putStrLn $ "Reading " ++ inp ++ "..."
         loadLog inp
     addFile logf
 
 processFiles :: HisgM ()
 processFiles = do
     hst <- get
-    forM_ (files hst) $ \logf -> liftIO $ writeLog logf
+    forM_ (files hst) (liftIO . writeLog)
 
 writeLog :: IRCLog -> IO ()
 writeLog logf = do
@@ -86,6 +86,7 @@ writeLog logf = do
         out = fn ++ ".html"
     putStr $ "Writing " ++ out ++ "..."
     outf <- openFile out WriteMode
+    writeHeaders outf fn
     writeUsersTable outf (take 25 (reverse . sort $ calcMessageStats (contents logf)))
     hClose outf
     putStrLn " done."
