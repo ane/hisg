@@ -76,9 +76,10 @@ isMessage (Message _ _ _) = True
 isMessage _ = False
 
 calcMessageStats :: Log -> [User]
-calcMessageStats logf = buildU `fmap` (processMessages logf)
-    where
-        buildU (n, l, w) = User n l w
+calcMessageStats logf = runST $ do
+    users <- newSTRef []
+    forM_ (processMessages logf) $ \(n, l, w) -> modifySTRef users ((User n l w) :)
+    readSTRef users
 
 countNicks log = runST $ do
     users <- newSTRef [""]

@@ -25,11 +25,11 @@ import Hisg.Types
 import Hisg.Stats
 import Hisg.Misc
 
-writeHeaders :: Handle -> String -> String -> Log -> IO ()
-writeHeaders out chan stylesheet logf = do
+writeHeaders :: Handle -> String -> IO ()
+writeHeaders out chan = do
     --let dates = getDates logf
     hPutStrLn out $ "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
-    hPutStrLn out $ "<link rel=\"stylesheet\" type=\"text/css\" href=\"" ++ stylesheet ++ "\" />"
+    hPutStrLn out $ "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
     hPutStrLn out "</style>\n<body>\n"
     hPutStrLn out $ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1>"
     --hPutStrLn out $ "<p>Data from " ++ show (head dates) ++ " &mdash; " ++ show (last dates) ++ "<br/>"
