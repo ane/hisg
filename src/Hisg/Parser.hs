@@ -55,11 +55,12 @@ parseContent = anyChar `manyTill` (lookAhead (oneOf "\n"))
 line :: CharParser st LogEvent
 line = do
     try parseEvent
-    <|> try parseKick
+--    <|> try parseKick
     <|> try parseDayChange
     <|> try parseUserMessage
     <|> try parseNotification
     <?> "Weird line"
+--    <?> "Weird line"
 
 parseUserMessage :: CharParser st LogEvent
 parseUserMessage = do
@@ -129,10 +130,10 @@ parseEventType = do
     ev <- anyChar `manyTill` (lookAhead (oneOf " "))
     space
     return (case ev of
-        "joined"    -> "JOIN"
-        "left"        -> "PART"
-        "quit"        -> "QUIT"
-        "changed"     -> "NICK"
-        _             -> "")
+        "joined"    -> Join
+        "left"        -> Part
+        "quit"        -> Quit
+        "changed"     -> Nick
+        _             -> Unknown)
 
 
