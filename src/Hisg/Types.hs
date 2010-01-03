@@ -45,7 +45,7 @@ data LogEvent =
 -- Type aliases
 
 type Log = [LogEvent]
-type EventType = String
+data EventType = Join | Part | Quit | Nick | Unknown deriving (Eq, Show)
 
 months :: [String]
 months = ["Jan",

@@ -21,7 +21,6 @@
 -- | and the actions to do with them.
 module Hisg.Core where
 
-import Control.Concurrent.STM
 import Control.Monad.State.Lazy
 import Data.Maybe
 import Data.List
