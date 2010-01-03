@@ -22,7 +22,7 @@ module Hisg.Stats (
     getKicks,
     calcMessageStats,
     processMessages,
-    countNicks,
+    getNicks,
     ) where
 
 import Data.List
@@ -81,8 +81,8 @@ calcMessageStats logf = runST $ do
     forM_ (processMessages logf) $ \(n, l, w) -> modifySTRef users ((User n l w) :)
     readSTRef users
 
-countNicks log = runST $ do
-    users <- newSTRef [""]
+getNicks log = runST $ do
+    users <- newSTRef []
     forM_ log $ \msg -> do
         let n = nickname msg
         l <- readSTRef users
@@ -90,7 +90,7 @@ countNicks log = runST $ do
     readSTRef users
 
 processMessages log = runST $ do
-    nicks <- return (countNicks log)
+    nicks <- return (getNicks log)
     users <- newArray (0, length nicks) ("", 0,0) :: ST s (STArray s Int (String, Int,Int))
     forM_ log $ \msg -> do
         when (isMessage msg) $ do
