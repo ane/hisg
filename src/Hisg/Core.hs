@@ -35,6 +35,8 @@ type HisgM = StateT Hisg IO
 
 data Hisg = Hisg { files :: [IRCLog] }
 
+data Command = Parse | Format
+
 data HisgChange = ParseFile IRCLog
                 | FormatFile IRCLog
 
@@ -51,20 +53,14 @@ getFile n = do
     return $ listToMaybe $ filter (\logf -> filename logf == n) (files hst)
 
 -- | Parses a log file according to the user commands.
-parseLog :: String -> HisgM (Maybe HisgChange)
-parseLog fn = do
+parseLog :: String -> Command -> HisgM (Maybe HisgChange)
+parseLog fn cmd = do
     logf <- getFile fn
-    return $ do
+    return $ do -- maybe monad
         l <- logf
-        Just $ ParseFile l
-
--- | Formats a log into a HTML file.
-formatLog :: String -> String -> HisgM (Maybe HisgChange)
-formatLog fn outf = do
-    logf <- getFile fn
-    return $ do
-        l <- logf
-        Just $ FormatFile l
+        case cmd of
+            Parse -> Just $ ParseFile l
+            Format -> Just $ FormatFile l
 
 -- | Loads a file and queues it for parsing.
 loadFile :: String -> HisgM ()
@@ -77,15 +73,24 @@ loadFile inp = do
 processFiles :: HisgM ()
 processFiles = do
     hst <- get
-    forM_ (files hst) (liftIO . writeLog)
+    forM_ (files hst) (liftIO . processLog)
 
-writeLog :: IRCLog -> IO ()
-writeLog logf = do
+formatLog :: String -> IRCLog -> FormatterM String
+formatLog chan logf = do
+    insertHeaders chan
+    insertScoreboard (take 25 (reverse . sort $ calcMessageStats (contents logf)))
+    insertFooter "0.1.0"
+    getFinalOutput
+
+-- Formats the log and writes the output to a file.
+-- Lifts to the Formatter monad. When that's ready, that is.
+processLog :: IRCLog -> IO ()
+processLog logf = do
     let fn = takeWhile ('.' /=) $ filename logf
         out = fn ++ ".html"
+    output <- evalStateT (formatLog fn logf) (Formatter "")
     putStr $ "Writing " ++ out ++ "..."
     outf <- openFile out WriteMode
-    writeHeaders outf fn
-    writeUsersTable outf (take 25 (reverse . sort $ calcMessageStats (contents logf)))
+    hPutStrLn outf output
     hClose outf
     putStrLn " done."

@@ -20,26 +20,56 @@ module Hisg.Formatter where
 
 import System.IO
 import Data.List
+import Control.Monad.State.Lazy
+import Data.Maybe
+import Data.List
+import System.IO
 
 import Hisg.Types
 import Hisg.Stats
 import Hisg.Misc
 
-writeHeaders :: Handle -> String -> IO ()
-writeHeaders out chan = do
-    --let dates = getDates logf
-    hPutStrLn out $ "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
-    hPutStrLn out $ "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
-    hPutStrLn out "</style>\n<body>\n"
-    hPutStrLn out $ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1>"
-    --hPutStrLn out $ "<p>Data from " ++ show (head dates) ++ " &mdash; " ++ show (last dates) ++ "<br/>"
-    --hPutStrLn out $ "A total of " ++ show (length logf) ++ " lines were spoken during this period.</p>"
 
-writeUsersTable :: Handle -> [User] -> IO ()
-writeUsersTable out users = do
-    hPutStrLn out "<h2>Top 25 users</h2>"
-    hPutStrLn out $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ userNick u ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+-- | The FormatterM monad provides a data abstraction layer between the formatted content
+-- | and user input. @addOutput@ and @getOutput@ are the methods used to add and fetch data,
+-- | respectively.
+type FormatterM = StateT Formatter IO
 
+data Formatter = Formatter { output :: String }
+
+-- | Adds output to the content.
+addOutput :: String -> FormatterM()
+addOutput str = do
+    fmst <- get
+    put $ Formatter $ (output fmst) ++ str
+
+-- | Gets the final output.
+getFinalOutput :: FormatterM String
+getFinalOutput = do
+    fmst <- get
+    return (output fmst)
+
+-- | Adds HTML headers to the output.
+insertHeaders :: String -> FormatterM ()
+insertHeaders chan = do
+    addOutput str
+    where
+        str =   "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
+             ++ "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
+             ++ "</style>\n<body>\n"
+             ++ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1>"
+
+-- | Adds a small HTML footer.
+insertFooter :: String -> FormatterM ()
+insertFooter ver = do
+    addOutput $ "<p>Generated with <a href=\"http://anhekalm.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></body></html>"
+
+insertScoreboard :: [User] -> FormatterM ()
+insertScoreboard users = do
+    addOutput "<h2>Top 25 users</h2>"
+    addOutput $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ userNick u ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+
+-- FOR THE LOVE OF GOD, MAKE THIS CODE BETTER.
 writeMiscStats :: Handle -> Log -> IO ()
 writeMiscStats out logf = do
     let kicks = getKicks logf
@@ -71,5 +101,3 @@ writeMiscStats out logf = do
 getKicked (KickEvent k) = kickTarget k
 getKicker (KickEvent k) = kickAuthor k
 
-footer :: String -> String
-footer ver = "<p>Generated with <a href=\"http://anhekalm.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></body></html>"
