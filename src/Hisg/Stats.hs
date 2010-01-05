@@ -55,7 +55,7 @@ analyzePred f = A p
                  | otherwise = []
 
 event :: EventType -> AnalyzerM LogEvent
-event evt = analyzePred $ checkEvent evt
+event = analyzePred . checkEvent
 
 kick :: AnalyzerM LogEvent
 kick = analyzePred isKick
@@ -81,26 +81,31 @@ calcMessageStats logf = runST $ do
     forM_ (processMessages logf) $ \(n, l, w) -> modifySTRef users ((User n l w) :)
     readSTRef users
 
+getNicks :: Log -> [String]
 getNicks log = runST $ do
     users <- newSTRef []
     forM_ log $ \msg -> do
         let n = nickname msg
         l <- readSTRef users
-        when (isMessage msg && n `notElem` l) $ modifySTRef users (\xs -> xs++[n])
+        when (isMessage msg && n `notElem` l) $ modifySTRef users (++ [n])
     readSTRef users
 
+processMessages :: Log -> [(String, Int, Int)
 processMessages log = runST $ do
-    nicks <- return (getNicks log)
-    users <- newArray (0, length nicks) ("", 0,0) :: ST s (STArray s Int (String, Int,Int))
-    forM_ log $ \msg -> do
-        when (isMessage msg) $ do
-            let nick = nickname msg
-            let ni = nindex nick nicks
-            (n_, l_, w_) <- readArray users ni
-            writeArray users ni (nick, l_ + 1, w_ + (length $ words (content msg)))
+    let nicks = getNicks log
+    users <- newArray (0, length nicks) ("", 0,0) ::
+                ST s (STArray s Int (String, Int,Int))
+    forM_ log $
+        \msg ->
+            when (isMessage msg) $ do
+                let nick = nickname msg
+                    ni = nindex nick nicks
+                (n_, l_, w_) <- readArray users ni
+                writeArray users ni (nick, l_ + 1, w_ + length (words (content msg)))
     getElems users
-        where
-            nindex i xs = fromMaybe 666 (i `elemIndex` xs)
+
+    where
+        nindex i = fromMaybe 0 . (i `elemIndex` )
 
 getDates :: Log -> [LogEvent]
 getDates = filter isDate

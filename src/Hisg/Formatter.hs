@@ -31,8 +31,13 @@ import Hisg.Misc
 
 
 -- | The FormatterM monad provides a data abstraction layer between the formatted content
--- | and user input. @addOutput@ and @getOutput@ are the methods used to add and fetch data,
--- | respectively.
+--  and user input. @addOutput@ and @getOutput@ are the methods used to add and fetch data,
+--  respectively.
+--
+--  The intent is that one can just pipe output in a chain and keep the output pure, but liftable
+--  into IO. Maybe this whole design is completely redundant, I don't know.
+--
+-- TODO: Turn this to use WriterT. Using StateT for appending is slow.
 type FormatterM = StateT Formatter IO
 
 data Formatter = Formatter { output :: String }
