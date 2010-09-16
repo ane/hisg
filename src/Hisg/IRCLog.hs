@@ -22,17 +22,29 @@ module Hisg.IRCLog where
 
 import System.IO
 import Data.Maybe
+import Control.Parallel.Strategies (NFData(..), rwhnf)
 
 import Hisg.Parser
 import Hisg.Types
+import Hisg.LineChunks
 
-data IRCLog = IRCLog { filename :: String, contents :: [LogEvent] }
+import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.Lazy.Char8 as L
 
-parseInput :: String -> Log
-parseInput inp = map (fromMaybe (Simple "") . (decode . (++ "\n"))) (lines inp)
+data IRCLog = IRCLog { filename :: String, contents :: [[LogEvent]] }
+
+instance NFData S.ByteString where
+    rnf _ = ()    -- not built into Control.Parallel.Strategies
+
+instance NFData LogEvent where
+    rnf _ = ()
+
+parseInput :: [L.ByteString] -> [[LogEvent]]
+parseInput chunks = map conv (map (S.concat . L.toChunks) chunks)
+    where
+        conv inp = map (fromMaybe (Simple (S.pack "")) . (decode)) (S.lines inp)
 
 loadLog :: String -> IO IRCLog
 loadLog fn = do
-    infile <- openFile fn ReadMode
-    inp <- hGetContents infile
-    return $ IRCLog fn (parseInput inp)
+    inp <- chunkedReadWith parseInput fn
+    return $ IRCLog fn inp
