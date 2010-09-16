@@ -18,27 +18,41 @@
 
 module Hisg.Parser (
     decode,
-    parseTimestamp,
-    parseContent,
-    parseUserMessage,
-    parseNotification,
-    parseEventType,
-    parseEvent,
-    parseDayChange,
-    line
+--    parseTimestamp,
+--    parseContent,
+--    parseUserMessage,
+--    parseNotification,
+--    parseEventType,
+--    parseEvent,
+--    parseDayChange,
+--   line,
+   getNormalMessage,
     ) where
 
+import qualified Data.ByteString.Char8 as S
+import Text.Regex.PCRE.Light (compile, match)
 import Text.ParserCombinators.Parsec
 import Data.List.Split (splitOn)
 import Data.List
 
 import Hisg.Types
+import Hisg.Formats.Irssi
 
 -- Constants. You shouldn't touch these.
 -- Parses a line into a line.
-decode :: String -> Maybe LogEvent
-decode = either (const Nothing) Just . parse line ""
+--decode :: String -> Maybe LogEvent
+--decode = either (const Nothing) Just . parse line ""
 
+decode :: S.ByteString -> Maybe LogEvent
+decode = getNormalMessage
+
+getNormalMessage :: S.ByteString -> Maybe LogEvent
+getNormalMessage msg = case match (compile pattern []) msg [] of
+    Just (_:ts:nick:sd) -> Just $ Message ts nick (S.concat sd)
+    _ -> Nothing
+    where
+        pattern = normalMessage
+{--
 -- What defines our line. Usually it's "timestamp event data", the timestamp is ubiquituous.
 
 parseTimestamp :: CharParser st Timestamp
@@ -136,4 +150,4 @@ parseEventType = do
         "changed"     -> Nick
         _             -> Unknown)
 
-
+-}

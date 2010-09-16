@@ -29,6 +29,7 @@ import Hisg.Types
 import Hisg.Stats
 import Hisg.Misc
 
+import qualified Data.ByteString.Char8 as S
 
 -- | The FormatterM monad provides a data abstraction layer between the formatted content
 --  and user input. @addOutput@ and @getOutput@ are the methods used to add and fetch data,
@@ -67,42 +68,9 @@ insertHeaders chan = do
 -- | Adds a small HTML footer.
 insertFooter :: String -> FormatterM ()
 insertFooter ver = do
-    addOutput $ "<p>Generated with <a href=\"http://anhekalm.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></body></html>"
+    addOutput $ "<p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></body></html>"
 
 insertScoreboard :: [User] -> FormatterM ()
 insertScoreboard users = do
     addOutput "<h2>Top 25 users</h2>"
-    addOutput $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ userNick u ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
-
--- FOR THE LOVE OF GOD, MAKE THIS CODE BETTER.
-writeMiscStats :: Handle -> Log -> IO ()
-writeMiscStats out logf = do
-    let kicks = getKicks logf
-        kickers = common (map getKicker kicks)
-        kickeds = common (map getKicked kicks)
-
-    hPutStrLn out "<h2>Miscellaneous stats</h2>\n<table>"
-    if length kickers > 0
-        then do
-            let topkicker = head kickers
-                topkicked = head kickeds
-            hPutStrLn out $ "<tr><td><b>" ++ head topkicker ++ "</b> acted as the channel judge. He kicked a total of <b>" ++ show (length topkicker) ++ "</b> people!<br/>"
-            if length kickers > 1
-                then do
-                    let sndkicker = kickers !! 1
-                    hPutStrLn out $ "His lieutenant, <b>" ++ head sndkicker ++ "</b>, assisted with <b>" ++ show (length sndkicker) ++ "</b> kicks!</td></tr>"
-                else do
-                    hPutStrLn out "No one else kicked people in the channel."
-            hPutStrLn out $ "<tr><td>Nobody liked <b>" ++ head topkicked ++ "</b>. He got kicked " ++ show (length topkicked) ++ "</b> times!<br/>"
-            if length kickeds > 1
-                then do
-                    let sndkicked = kickeds !! 1
-                    hPutStrLn out $ "<b>" ++ head sndkicked ++ "</b> came second on the loser chart, getting kicked " ++ show (length sndkicked) ++ "</b> times!<br/></td></tr>"
-                else do hPutStrLn out "He was the only one to get kicked!"
-        else do hPutStrLn out "<tr><td>Nobody kicked anyone during this period.</td></tr>"
-
-    hPutStrLn out "</table>"
-
-getKicked (KickEvent k) = kickTarget k
-getKicker (KickEvent k) = kickAuthor k
-
+    addOutput $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ S.unpack (userNick u) ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
