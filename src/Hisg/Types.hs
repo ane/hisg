@@ -22,10 +22,12 @@ import Data.List
 import Data.Char
 import Text.Printf
 
+import qualified Data.ByteString.Char8 as S
+
 -- Basic types
 data Timestamp = Timestamp { ts_hour :: Int, ts_minute :: Int }
 data Date = Date { day :: Int, month :: Int, year :: Int }
-data User = User { userNick :: String, userWords :: Int, userLines :: Int }
+data User = User { userNick :: S.ByteString, userWords :: Int, userLines :: Int }
 data Event = Event { eventTimestamp :: Timestamp, eventType :: EventType, eventUser :: String, eventHost :: String, eventParam :: String }
 
 data Mode = Mode { modeTS :: Timestamp, modeChars :: String, authorHost :: String, targets :: String }
@@ -33,18 +35,18 @@ data Topic = Topic { topicTs :: Timestamp, topicAuthor :: String, topicContent :
 data Kick = Kick { kickTs :: Timestamp, kickAuthor :: String, kickTarget :: String, kickReason :: String }
 
 data LogEvent =
-    Message { timestamp :: Timestamp, nickname    :: String, content :: String }
+    Message { timestamp :: S.ByteString, nickname :: S.ByteString, content :: S.ByteString }
     | Notification String
     | DateChange Date
     | CustomEvent Event
     | ModeChange Mode
     | TopicChange Topic
     | KickEvent Kick
-    | Simple String
+    | Simple S.ByteString
 
 -- Type aliases
 
-type Log = [LogEvent]
+type Log = [[LogEvent]]
 data EventType = Join | Part | Quit | Nick | Unknown deriving (Eq, Show)
 
 months :: [String]
@@ -65,15 +67,14 @@ instance Show Timestamp where
     show (Timestamp h m) = printf "%02d:%02d" h m
 
 instance Show LogEvent where
-    show (Message ts nick content) = show ts ++ " " ++ "<" ++ nick ++ ">" ++ " " ++ content
+    show (Message ts nick content) = S.unpack $ S.concat [ts, S.pack " <", nick, S.pack "> ", content]
     show (Notification cont) = cont
     show (DateChange (Date d m y)) = intercalate " " (map show [d, m, y])
     show (CustomEvent ev) = show ev
-    show (Simple str) = str
     show (KickEvent (Kick ts author target reason)) = show ts ++ " " ++ author ++ " kicked " ++ target ++ ", reason: " ++ reason
 
 instance Show User where
-    show (User nick words lines) = nick ++ " :: " ++ show words ++ " words, " ++ show lines ++ " lines"
+    show (User nick words lines) = (S.unpack nick) ++ " :: " ++ show words ++ " words, " ++ show lines ++ " lines"
 
 instance Show Event where
     show (Event ts evtype evuser host param) = map (toUpper) (show ts) ++ " " ++ show evtype ++ ": " ++ evuser ++ " (" ++ host ++ ")" ++ " -> " ++ param

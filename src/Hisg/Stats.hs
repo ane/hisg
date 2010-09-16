@@ -18,11 +18,11 @@
 
 module Hisg.Stats (
     isMessage,
-    getDates,
-    getKicks,
+--    getDates,
+--    getKicks,
     calcMessageStats,
     processMessages,
-    getNicks,
+--   getNicks,
     ) where
 
 import Data.List
@@ -32,8 +32,12 @@ import Data.STRef
 import Data.Maybe
 import Control.Monad
 import Control.Monad.ST
+import qualified Data.Map as M
+import qualified Data.Set as Set
+import qualified Data.ByteString.Char8 as S
 
 import Hisg.Types
+import Hisg.MapReduce
 
 instance Ord User where
   (User n1 w1 l1) <= (User n2 w2 l2) = l1 <= l2
@@ -41,36 +45,6 @@ instance Ord User where
 
 instance Eq User where
   (User n1 w1 l1) == (User n2 w2 l2) = n1 == n2 && w1 == w2 && l1 == l2
-
-data AnalyzerM a =  A (Log -> [(a, Log)])
-
-runAnalyzer (A a) log = a log
-
--- | Tests the next event against the function f.
-analyzePred :: (LogEvent -> Bool) -> AnalyzerM LogEvent
-analyzePred f = A p
-    where
-        p [] = []
-        p (x:xs) | f x = [(x, xs)]
-                 | otherwise = []
-
-event :: EventType -> AnalyzerM LogEvent
-event = analyzePred . checkEvent
-
-kick :: AnalyzerM LogEvent
-kick = analyzePred isKick
-
-message :: AnalyzerM LogEvent
-message = analyzePred isMessage
-
-checkEvent t (CustomEvent e) = eventType e == t
-checkEvent _ _ = False
-
-isKick (KickEvent _) = True
-isKick _ = False
-
-isEvent (CustomEvent _) = True
-isEvent _ = False
 
 isMessage (Message _ _ _) = True
 isMessage _ = False
@@ -81,7 +55,23 @@ calcMessageStats logf = runST $ do
     forM_ (processMessages logf) $ \(n, l, w) -> modifySTRef users ((User n l w) :)
     readSTRef users
 
-getNicks :: Log -> [String]
+-- | Gets the unique nicknames of all log messages in the log
+{-
+getNicks' :: Log -> [S.ByteString]
+getNicks' log = nub users
+    where
+        users = catMaybes $ map nick log
+        nick (Message _ n _) = Just n
+        nick _ = Nothing
+
+getNicks'' :: Log -> [S.ByteString]
+getNicks'' log = Set.toList nicks
+    where
+        nicks = Set.fromList $ catMaybes $ map nick log
+        nick (Message _ n _) = Just n
+        nick _ = Nothing
+
+getNicks :: Log -> [S.ByteString]
 getNicks log = runST $ do
     users <- newSTRef []
     forM_ log $ \msg -> do
@@ -89,19 +79,30 @@ getNicks log = runST $ do
         l <- readSTRef users
         when (isMessage msg && n `notElem` l) $ modifySTRef users (++ [n])
     readSTRef users
-
-processMessages :: Log -> [(String, Int, Int)
-processMessages log = runST $ do
+-}
+processMessages :: Log -> [(S.ByteString, Int, Int)]
+processMessages log = map fmt $ M.toList $ mapReduce rwhnf (foldl' update M.empty)
+                                                     rwhnf (M.unionsWith (sumTuples)) (map msgs log)
+    where
+        -- Increments the user word count by wc and line count by 1.
+        update map (Message _ nick line) = M.insertWith (sumTuples) nick (1, S.count ' ' line) map
+        msgs = filter isMessage
+        sumTuples (a,b) (c,d) = (a+c,b+d)
+        fmt (a, (b,c)) = (a, c, b)
+{-
+-- Old STArray implementation
+processMessages' :: Log -> [(S.ByteString, Int, Int)]
+processMessages' log = runST $ do
     let nicks = getNicks log
-    users <- newArray (0, length nicks) ("", 0,0) ::
-                ST s (STArray s Int (String, Int,Int))
+    users <- newArray (0, length nicks) (S.pack "", 0,0) ::
+                ST s (STArray s Int (S.ByteString, Int,Int))
     forM_ log $
         \msg ->
             when (isMessage msg) $ do
                 let nick = nickname msg
                     ni = nindex nick nicks
                 (n_, l_, w_) <- readArray users ni
-                writeArray users ni (nick, l_ + 1, w_ + length (words (content msg)))
+                writeArray users ni (nick, l_ + 1, w_ + length (S.words (content msg)))
     getElems users
 
     where
@@ -118,3 +119,4 @@ getKicks = filter isKick
     where
         isKick (KickEvent _) = True
         isKick _ = False
+-}
