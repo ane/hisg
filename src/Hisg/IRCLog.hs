@@ -40,9 +40,9 @@ instance NFData LogEvent where
     rnf _ = ()
 
 parseInput :: [L.ByteString] -> [[LogEvent]]
-parseInput chunks = map conv (map (S.concat . L.toChunks) chunks)
+parseInput chunks = map conv chunks
     where
-        conv inp = map (fromMaybe (Simple (S.pack "")) . (decode)) (S.lines inp)
+        conv inp = map (fromMaybe (Simple (L.pack "")) . (decode)) (L.lines inp)
 
 loadLog :: String -> IO IRCLog
 loadLog fn = do

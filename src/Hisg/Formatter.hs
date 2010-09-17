@@ -29,7 +29,7 @@ import Hisg.Types
 import Hisg.Stats
 import Hisg.Misc
 
-import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.Lazy.Char8 as S
 
 -- | The FormatterM monad provides a data abstraction layer between the formatted content
 --  and user input. @addOutput@ and @getOutput@ are the methods used to add and fetch data,
@@ -62,15 +62,15 @@ insertHeaders chan = do
     where
         str =   "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
              ++ "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
-             ++ "</style>\n<body>\n"
-             ++ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1>"
+             ++ "</style>\n<body><div id=\"head\">\n"
+             ++ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1></div><div id=\"main\">"
 
 -- | Adds a small HTML footer.
 insertFooter :: String -> FormatterM ()
 insertFooter ver = do
-    addOutput $ "<p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></body></html>"
+    addOutput $ "</div><div id=\"footer\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></body></html>"
 
 insertScoreboard :: [User] -> FormatterM ()
 insertScoreboard users = do
-    addOutput "<h2>Top 25 users</h2>"
-    addOutput $ "<table>\n<tr><th>Nickname</th><th>Number of lines</th><th>Number of words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ S.unpack (userNick u) ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+    addOutput "<h2>Top 15 users</h2>"
+    addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ S.unpack (userNick u) ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
