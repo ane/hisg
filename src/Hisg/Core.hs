@@ -73,12 +73,12 @@ loadFile inp = do
 processFiles :: HisgM ()
 processFiles = do
     hst <- get
-    forM_ (files hst) (liftIO . processLog)
+    mapM_ (liftIO . processLog) (files hst)
 
 formatLog :: String -> IRCLog -> FormatterM String
 formatLog chan logf = do
     insertHeaders chan
-    insertScoreboard (take 25 (reverse . sort $ calcMessageStats (contents logf)))
+    insertScoreboard (take 15 (reverse . sort $ calcMessageStats (contents logf)))
     insertFooter "0.1.0"
     getFinalOutput
 
