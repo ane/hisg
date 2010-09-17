@@ -22,7 +22,7 @@ import Data.List
 import Data.Char
 import Text.Printf
 
-import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.Lazy.Char8 as S
 
 -- Basic types
 data Timestamp = Timestamp { ts_hour :: Int, ts_minute :: Int }

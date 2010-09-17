@@ -30,6 +30,7 @@ module Hisg.Parser (
     ) where
 
 import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.Lazy.Char8 as L
 import Text.Regex.PCRE.Light (compile, match)
 import Text.ParserCombinators.Parsec
 import Data.List.Split (splitOn)
@@ -43,14 +44,15 @@ import Hisg.Formats.Irssi
 --decode :: String -> Maybe LogEvent
 --decode = either (const Nothing) Just . parse line ""
 
-decode :: S.ByteString -> Maybe LogEvent
+decode :: L.ByteString -> Maybe LogEvent
 decode = getNormalMessage
 
-getNormalMessage :: S.ByteString -> Maybe LogEvent
-getNormalMessage msg = case match (compile pattern []) msg [] of
-    Just (_:ts:nick:sd) -> Just $ Message ts nick (S.concat sd)
+getNormalMessage :: L.ByteString -> Maybe LogEvent
+getNormalMessage msg = case match (compile pattern []) (strict msg) [] of
+    Just (_:ts:nick:sd) -> Just $ Message (L.fromChunks [ts]) (L.fromChunks [nick]) (L.fromChunks sd)
     _ -> Nothing
     where
+        strict = S.concat . L.toChunks
         pattern = normalMessage
 {--
 -- What defines our line. Usually it's "timestamp event data", the timestamp is ubiquituous.
