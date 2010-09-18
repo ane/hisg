@@ -29,7 +29,7 @@ import Hisg.Types
 import Hisg.Stats
 import Hisg.Misc
 
-import qualified Data.ByteString.Lazy.Char8 as S
+import qualified Data.ByteString.Char8 as S
 
 -- | The FormatterM monad provides a data abstraction layer between the formatted content
 --  and user input. @addOutput@ and @getOutput@ are the methods used to add and fetch data,
@@ -75,6 +75,6 @@ insertScoreboard users = do
     addOutput "<h2>Top 15 users</h2>"
     addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th></tr>"
         ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> "
-        ++ S.unpack (fst u) ++ "</td><td>" ++ show ((snd . snd) u)
-        ++ "</td><td>" ++ show ((fst . snd) u)
+        ++ S.unpack (fst u) ++ "</td><td>" ++ show ((fst . snd) u)
+        ++ "</td><td>" ++ show ((snd . snd) u)
         ++ "</td></tr>") (zip [1..] users) ++ "</table>"

@@ -32,7 +32,7 @@ import Control.Monad
 import Control.Monad.State
 import qualified Data.Map as M
 import qualified Data.Set as Set
-import qualified Data.ByteString.Lazy.Char8 as S
+import qualified Data.ByteString.Char8 as S
 
 import Hisg.Types
 import Hisg.MapReduce
@@ -70,7 +70,7 @@ workMessageStats = do
 --    msgs <- takeKicks
 --
 calcMessageStats :: Log -> [(S.ByteString, (Int, Int))]
-calcMessageStats log = evalState (workMessageStats) log
+calcMessageStats log = processMessages log
 
 --calcKickStats :: Log -> [(S.ByteString, Int)]
 --calcKickStats = evalState (workKickStats)
