@@ -70,7 +70,11 @@ insertFooter :: String -> FormatterM ()
 insertFooter ver = do
     addOutput $ "</div><div id=\"footer\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></body></html>"
 
-insertScoreboard :: [User] -> FormatterM ()
+insertScoreboard :: [(S.ByteString, (Int, Int))] -> FormatterM ()
 insertScoreboard users = do
     addOutput "<h2>Top 15 users</h2>"
-    addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th></tr>" ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> " ++ S.unpack (userNick u) ++ "</td><td>" ++ show (userLines u) ++ "</td><td>" ++ show (userWords u) ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+    addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th></tr>"
+        ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> "
+        ++ S.unpack (fst u) ++ "</td><td>" ++ show ((snd . snd) u)
+        ++ "</td><td>" ++ show ((fst . snd) u)
+        ++ "</td></tr>") (zip [1..] users) ++ "</table>"
