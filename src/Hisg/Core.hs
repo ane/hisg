@@ -25,6 +25,7 @@ import Control.Monad.State.Lazy
 import Data.Maybe
 import Data.List
 import System.IO
+import qualified Data.Map as M
 
 import Hisg.IRCLog
 import Hisg.Formatter
@@ -67,7 +68,7 @@ loadFile :: String -> HisgM ()
 loadFile inp = do
     logf <- liftIO $ do
         putStrLn $ "Reading " ++ inp ++ "..."
-        loadLog inp
+        loadLog' inp
     addFile logf
 
 processFiles :: HisgM ()
@@ -79,7 +80,7 @@ formatLog :: String -> IRCLog -> FormatterM String
 formatLog chan logf = do
     let popular (_, (a, _)) (_, (b, _)) = compare b a
     insertHeaders chan
-    insertScoreboard (take 15 . sortBy popular $ calcMessageStats (contents logf))
+    insertScoreboard (take 15 . sortBy popular . M.toList . calcMessageStats)
     insertFooter "0.1.0"
     getFinalOutput
 
