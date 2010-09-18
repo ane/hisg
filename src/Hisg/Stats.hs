@@ -21,6 +21,7 @@ module Hisg.Stats (
 --    getDates,
 --    getKicks,
     calcMessageStats,
+    calcMessageStats'',
     processMessages,
     updateMap
 --   getNicks,
@@ -33,9 +34,12 @@ import Control.Monad.State
 import qualified Data.Map as M
 import qualified Data.Set as Set
 import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.Lazy.Char8 as L
 
+import Text.Regex.PCRE.Light (compile, match)
 import Hisg.Types
 import Hisg.MapReduce
+import Hisg.Formats.Irssi
 
 --instance Ord User where
 --  (User n1 w1 l1) <= (User n2 w2 l2) = l1 <= l2
@@ -71,6 +75,17 @@ workMessageStats = do
 --
 calcMessageStats :: Log -> [(S.ByteString, (Int, Int))]
 calcMessageStats log = processMessages log
+
+calcMessageStats'' :: [L.ByteString] -> M.Map S.ByteString (Int, Int)
+calcMessageStats'' = mapReduce rwhnf (foldl' updateWLC M.empty . L.lines)
+                           rwhnf (M.unionsWith (sumTuples))
+    where
+        updateWLC map line =
+            case match (compile normalMessage []) (conv line) [] of
+              Just (_:ts:nick:contents)
+                    -> M.insertWith' (sumTuples) nick (1, length . S.words . S.concat $ contents) map
+              _ -> map
+        conv = S.concat . L.toChunks
 
 --calcKickStats :: Log -> [(S.ByteString, Int)]
 --calcKickStats = evalState (workKickStats)
