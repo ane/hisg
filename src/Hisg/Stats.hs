@@ -37,12 +37,12 @@ import qualified Data.ByteString.Lazy.Char8 as S
 import Hisg.Types
 import Hisg.MapReduce
 
-instance Ord User where
-  (User n1 w1 l1) <= (User n2 w2 l2) = l1 <= l2
-  (User n1 w1 l1) > (User n2 w2 l2) = l1 > l2
-
-instance Eq User where
-  (User n1 w1 l1) == (User n2 w2 l2) = n1 == n2 && w1 == w2 && l1 == l2
+--instance Ord User where
+--  (User n1 w1 l1) <= (User n2 w2 l2) = l1 <= l2
+--  (User n1 w1 l1) > (User n2 w2 l2) = l1 > l2
+--
+--instance Eq User where
+--(User n1 w1 l1) == (User n2 w2 l2) = n1 == n2 && w1 == w2 && l1 == l2
 
 -- | The StatsM monad allows us to work on a changing set of log events.
 -- As a result, we can prune what we want from the log while calculating stats,
@@ -50,31 +50,40 @@ instance Eq User where
 -- every bit of (un-lazy) data.
 type StatsM = State Log
 
--- | Gets the messages from the current log.
-getMessages :: StatsM Log
-getMessages = do
+-- | Gets the messages from the current log and updates the state with the remaining non-messages.
+takeMessages :: StatsM Log
+takeMessages = do
     evts <- get
-    put $ map (filter (not . isMessage)) evts
-    return $ map (filter isMessage) evts
+    put $ map snd $ (map (partition isMessage) evts)
+    return $ map fst $ (map (partition isMessage) evts)
 
 isMessage (Message _ _ _) = True
 isMessage _ = False
 
-workMessageStats :: StatsM [User]
+workMessageStats :: StatsM [(S.ByteString, (Int, Int))]
 workMessageStats = do
-    msgs <- getMessages
-    return $ map toUser (processMessages msgs)
+    msgs <- takeMessages
+    return $ processMessages msgs
 
-calcMessageStats :: Log -> [User]
+--workKickStats :: StatsM [(S.ByteString, Int)]
+--workKickStats = diio
+--    msgs <- takeKicks
+--
+calcMessageStats :: Log -> [(S.ByteString, (Int, Int))]
 calcMessageStats log = evalState (workMessageStats) log
 
-toUser (n, l, w) = User n l w
+--calcKickStats :: Log -> [(S.ByteString, Int)]
+--calcKickStats = evalState (workKickStats)
 
-processMessages :: Log -> [(S.ByteString, Int, Int)]
-processMessages log = map fmt $ M.toList $ mapReduce rwhnf (foldl' updateWLC M.empty)
+--toUser (n, l, w) = User n l w
+--toUser' (n, l) = User n l 0
+
+processMessages :: Log -> [(S.ByteString, (Int, Int))]
+processMessages log = M.toList $ mapReduce rwhnf (foldl' updateWLC M.empty)
                                                      rwhnf (M.unionsWith (sumTuples)) log
-    where
-        fmt (a, (b, c)) = (a, c, b)
+processMessages' :: Log -> [(S.ByteString, Int)]
+processMessages' log = M.toList $ mapReduce rwhnf (foldl' updateWLC' M.empty)
+                                                     rwhnf (M.unionsWith (+)) log
 
 -- | Alias for insertWith (it's shorter!)
 updateMap :: (Ord k) => (a -> a -> a) -> k -> a -> M.Map k a -> M.Map k a
@@ -83,6 +92,10 @@ updateMap fn key value = M.insertWith fn key value
 updateWLC :: M.Map S.ByteString (Int, Int) -> LogEvent -> M.Map S.ByteString (Int, Int)
 updateWLC map (Message ts nick line) = updateMap sumTuples nick (1, length $ S.words line) map
 updateWLC map _ = map
+
+updateWLC' :: M.Map S.ByteString Int -> LogEvent -> M.Map S.ByteString Int
+updateWLC' map (Message ts nick line) = updateMap (+) nick 1 map
+updateWLC' map _ = map
 
 sumTuples (a,b) (c,d) = (a+c, b+d)
 
