@@ -77,9 +77,9 @@ processFiles = do
 
 formatLog :: String -> IRCLog -> FormatterM String
 formatLog chan logf = do
-    let popular (_, (_, a)) (_, (_, b)) = compare b a
+    let popular (_, (a, _)) (_, (b, _)) = compare b a
     insertHeaders chan
-    insertScoreboard (take 15 . sortBy popular  $ calcMessageStats (contents logf))
+    insertScoreboard (take 15 . sortBy popular $ calcMessageStats (contents logf))
     insertFooter "0.1.0"
     getFinalOutput
 
