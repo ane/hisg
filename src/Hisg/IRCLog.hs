@@ -27,11 +27,14 @@ import Control.Parallel.Strategies (NFData(..), rwhnf)
 import Hisg.Parser
 import Hisg.Types
 import Hisg.LineChunks
+import Hisg.Stats
 
+import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 
-data IRCLog = IRCLog { filename :: String, contents :: [[LogEvent]] }
+--data IRCLog = IRCLog { filename :: String, contents :: [[LogEvent]] }
+data IRCLog = IRCLog { filename :: String, contents :: M.Map S.ByteString (Int, Int)  }
 
 instance NFData S.ByteString where
     rnf _ = ()    -- not built into Control.Parallel.Strategies
@@ -44,7 +47,11 @@ parseInput chunks = map conv chunks
     where
         conv inp = map (fromMaybe (Simple (L.pack "")) . (decode)) (L.lines inp)
 
-loadLog :: String -> IO IRCLog
-loadLog fn = do
-    inp <- chunkedReadWith parseInput fn
+loadLog' fn = do
+    inp <- chunkedReadWith calcMessageStats'' fn
     return $ IRCLog fn inp
+
+--loadLog :: String -> IO IRCLog
+--loadLog fn = do
+--    inp <- chunkedReadWith parseInput fn
+--    return $ IRCLog fn inp
