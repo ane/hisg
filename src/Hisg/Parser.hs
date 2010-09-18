@@ -49,7 +49,7 @@ decode = getNormalMessage
 
 getNormalMessage :: L.ByteString -> Maybe LogEvent
 getNormalMessage msg = case match (compile pattern []) (strict msg) [] of
-    Just (_:ts:nick:sd) -> Just $ Message (L.fromChunks [ts]) (L.fromChunks [nick]) (L.fromChunks sd)
+    Just (_:ts:nick:sd) -> Just $ Message ts nick (S.concat sd)
     _ -> Nothing
     where
         strict = S.concat . L.toChunks

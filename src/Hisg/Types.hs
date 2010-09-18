@@ -22,9 +22,11 @@ import Data.List
 import Data.Char
 import Text.Printf
 
-import qualified Data.ByteString.Lazy.Char8 as L
+
+import qualified Data.ByteString.Char8 as L
 import qualified Data.ByteString.Char8 as S
 
+import qualified Data.ByteString.Lazy.Char8 as X
 newtype User = User (L.ByteString, Int, Int)
 
 -- Basic types
@@ -45,7 +47,7 @@ data LogEvent =
     | ModeChange Mode
     | TopicChange Topic
     | KickEvent Kick
-    | Simple L.ByteString
+    | Simple X.ByteString
 
 -- Type aliases
 
