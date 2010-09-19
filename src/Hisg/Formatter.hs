@@ -78,3 +78,11 @@ insertScoreboard users = do
         ++ S.unpack (fst u) ++ "</td><td>" ++ show ((fst . snd) u)
         ++ "</td><td>" ++ show ((snd . snd) u)
         ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+
+insertKickScoreboard :: [(S.ByteString, Int)] -> FormatterM ()
+insertKickScoreboard users = do
+    addOutput "<h2>Top 15 kickers</h2>"
+    addOutput $ "<table>\n<tr><th>Nickname</th><th>Kicks</th></tr>"
+        ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> "
+        ++ S.unpack (fst u) ++ "</td><td>" ++ show (snd u)
+        ++ "</td></tr>") (zip [1..] users) ++ "</table>"

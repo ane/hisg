@@ -1,3 +1,5 @@
+-- From Real World Haskell chapter 24
+
 {-- snippet withChunks --}
 module Hisg.LineChunks
     (
