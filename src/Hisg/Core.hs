@@ -57,7 +57,7 @@ getFile n = do
 parseLog :: String -> Command -> HisgM (Maybe HisgChange)
 parseLog fn cmd = do
     logf <- getFile fn
-    return $ do -- maybe monad
+    return $ do
         l <- logf
         case cmd of
             Parse -> Just $ ParseFile l
@@ -71,6 +71,7 @@ loadFile inp = do
         loadLog' inp
     addFile logf
 
+-- slow and useless code that does nothing
 processFiles :: HisgM ()
 processFiles = do
     hst <- get
@@ -78,17 +79,19 @@ processFiles = do
 
 formatLog :: String -> IRCLog -> FormatterM String
 formatLog chan logf = do
-    let popular (_, (a, _)) (_, (b, _)) = compare b a
+    let popular (_, (a, _)) (_, (b, _)) = compare b a -- "!#¤/@%46%(348234yahdfsgfdssljshdf"
+        popular' (_, a) (_, b) = compare b a
     insertHeaders chan
-    insertScoreboard (take 15 . sortBy popular . M.toList . calcMessageStats)
+    insertScoreboard (take 15 . sortBy popular . M.toList . messageScores $ logf)
+    -- implement achievement code
+    insertKickScoreboard (take 1 . sortBy popular' . M.toList . kickScores $ logf)
     insertFooter "0.1.0"
     getFinalOutput
 
--- Formats the log and writes the output to a file.
--- Lifts to the Formatter monad. When that's ready, that is.
+-- | Formats the log and writes the output to a file.
 processLog :: IRCLog -> IO ()
 processLog logf = do
-    let fn = takeWhile ('.' /=) $ filename logf
+    let fn = takeWhile ('.' /=) $ filename logf -- wat?
         out = fn ++ ".html"
     output <- evalStateT (formatLog fn logf) (Formatter "")
     putStr $ "Writing " ++ out ++ "..."
