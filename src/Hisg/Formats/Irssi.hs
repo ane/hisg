@@ -1,6 +1,7 @@
 module Hisg.Formats.Irssi (
     normalMessage,
     timeStamp,
+    kick,
 --    kickEvent,
 --    topicEvent,
 --    dayChangeEvent,
@@ -20,18 +21,20 @@ timeStamp :: String
 timeStamp = "(\\d{2}:\\d{2})"
 
 nickName :: String
-nickName = "<.([" ++ validNickChars ++ "]+)>"
+nickName = "([" ++ validNickChars ++ "]+)"
+
+messageNickName = "<." ++ nickName ++ ">"
 
 channelName :: String
-channelName = "[#&!+]([" ++ validChanChars ++ "]+)"
+channelName = "[#&!\\+]([" ++ validChanChars ++ "]+)"
 
 -- | The normalMessage represents a normal IRC channel-directed PRIVMSG, e.g.:
 -- 11:00 < Kalroth> DOCTOR IS THAT MY BONE STICKING OUT AHHH
 -- The capture group consists of three parts: timestamp, nickname and message.
 normalMessage :: S.ByteString
-normalMessage = S.intercalate (S.pack "\\s") $ map S.pack [timeStamp, nickName, "(.*)"]
+normalMessage = S.intercalate (S.pack "\\s") $ map S.pack [timeStamp, messageNickName, "(.*)"]
 
 -- | The kick is a kick, containing four elements: kick target, kicker, channel and the reason, e.g.:
 -- 07:00 -!- rzz_ was kicked from #elitistjerks by CrazyDazed [Rule 1: Don't be stupid]
 kick :: S.ByteString
-kick = S.intercalate (S.pack "\\s") $ map S.pack [timeStamp, "-!-", nickName, "was kicked from", channelName, "\\[(.*)\\]"]
+kick = S.intercalate (S.pack "\\s") $ map S.pack [timeStamp, "-!-", nickName, "was kicked from", channelName, "by", nickName, "\\[(.*)\\]"]

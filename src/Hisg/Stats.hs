@@ -5,27 +5,28 @@
 --
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
---     * Redistributions of source code must retain the above copyright
---       notice, this list of conditions and the following disclaimer.
---     * Redistributions in binary form must reproduce the above copyright
---       notice, this list of conditions and the following disclaimer in the
---       documentation and/or other materials provided with the distribution.
---     * Neither the name of the author nor the
---       names of its contributors may be used to endorse or promote products
---       derived from this software without specific prior written permission.
+--   * Redistributions of source code must retain the above copyright
+--   notice, this list of conditions and the following disclaimer.
+--   * Redistributions in binary form must reproduce the above copyright
+--   notice, this list of conditions and the following disclaimer in the
+--   documentation and/or other materials provided with the distribution.
+--   * Neither the name of the author nor the
+--   names of its contributors may be used to endorse or promote products
+--   derived from this software without specific prior written permission.
 --
 -- For further details, see LICENSE.
 
 module Hisg.Stats (
-    isMessage,
---    getDates,
---    getKicks,
-    calcMessageStats,
-    calcMessageStats'',
-    processMessages,
-    updateMap
+  isMessage,
+--  getDates,
+--  getKicks,
+  calcMessageStats,
+  calcMessageStats'',
+  calcKickStats,
+  processMessages,
+  updateMap
 --   getNicks,
-    ) where
+  ) where
 
 import Data.List
 import Data.Maybe
@@ -57,35 +58,47 @@ type StatsM = State Log
 -- | Gets the messages from the current log and updates the state with the remaining non-messages.
 takeMessages :: StatsM Log
 takeMessages = do
-    evts <- get
-    put $ map snd $ (map (partition isMessage) evts)
-    return $ map fst $ (map (partition isMessage) evts)
+  evts <- get
+  put $ map snd $ (map (partition isMessage) evts)
+  return $ map fst $ (map (partition isMessage) evts)
 
 isMessage (Message _ _ _) = True
 isMessage _ = False
 
 workMessageStats :: StatsM [(S.ByteString, (Int, Int))]
 workMessageStats = do
-    msgs <- takeMessages
-    return $ processMessages msgs
+  msgs <- takeMessages
+  return $ processMessages msgs
 
 --workKickStats :: StatsM [(S.ByteString, Int)]
 --workKickStats = diio
---    msgs <- takeKicks
+--  msgs <- takeKicks
 --
 calcMessageStats :: Log -> [(S.ByteString, (Int, Int))]
 calcMessageStats log = processMessages log
 
 calcMessageStats'' :: [L.ByteString] -> M.Map S.ByteString (Int, Int)
 calcMessageStats'' = mapReduce rwhnf (foldl' updateWLC M.empty . L.lines)
-                           rwhnf (M.unionsWith (sumTuples))
-    where
-        updateWLC map line =
-            case match (compile normalMessage []) (conv line) [] of
-              Just (_:ts:nick:contents)
-                    -> M.insertWith' (sumTuples) nick (1, length . S.words . S.concat $ contents) map
-              _ -> map
-        conv = S.concat . L.toChunks
+                   rwhnf (M.unionsWith (sumTuples))
+  where
+    updateWLC map line =
+      case match (compile normalMessage []) (conv line) [] of
+        Just (_:ts:nick:contents)
+              -> M.insertWith' (sumTuples) nick (1, length . S.words . S.concat $ contents) map
+        _ -> map
+
+conv = S.concat . L.toChunks
+
+-- | The tuple records kicks and kicks received
+calcKickStats :: [L.ByteString] -> M.Map S.ByteString Int
+calcKickStats = mapReduce rwhnf (foldl' updateKC M.empty . L.lines)
+                          rwhnf (M.unionsWith (+))
+  where
+    updateKC map line =
+        case match (compile kick []) (conv line) [] of
+            Just (_:ts:target:chan:author:reason)
+                -> M.insertWith' (+) author 1 map
+            _ -> map
 
 --calcKickStats :: Log -> [(S.ByteString, Int)]
 --calcKickStats = evalState (workKickStats)
@@ -95,10 +108,10 @@ calcMessageStats'' = mapReduce rwhnf (foldl' updateWLC M.empty . L.lines)
 
 processMessages :: Log -> [(S.ByteString, (Int, Int))]
 processMessages log = M.toList $ mapReduce rwhnf (foldl' updateWLC M.empty)
-                                                     rwhnf (M.unionsWith (sumTuples)) log
+                                             rwhnf (M.unionsWith (sumTuples)) log
 processMessages' :: Log -> [(S.ByteString, Int)]
 processMessages' log = M.toList $ mapReduce rwhnf (foldl' updateWLC' M.empty)
-                                                     rwhnf (M.unionsWith (+)) log
+                                             rwhnf (M.unionsWith (+)) log
 
 -- | Alias for insertWith (it's shorter!)
 updateMap :: (Ord k) => (a -> a -> a) -> k -> a -> M.Map k a -> M.Map k a
