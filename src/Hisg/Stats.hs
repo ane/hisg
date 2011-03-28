@@ -77,6 +77,8 @@ workMessageStats = do
 calcMessageStats :: Log -> [(S.ByteString, (Int, Int))]
 calcMessageStats log = processMessages log
 
+-- | Calculates statistics for normal messages, returning a map
+-- with stats for each nick.
 calcMessageStats'' :: [L.ByteString] -> M.Map S.ByteString (Int, Int)
 calcMessageStats'' = mapReduce rwhnf (foldl' updateWLC M.empty . L.lines)
                    rwhnf (M.unionsWith (sumTuples))
