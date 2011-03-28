@@ -10,6 +10,7 @@ module Hisg.MapReduce
 
 import Control.Parallel (pseq)
 import Control.Parallel.Strategies
+import Control.DeepSeq
 
 {-- snippet simpleMapReduce.type --}
 simpleMapReduce
