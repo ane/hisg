@@ -1,6 +1,6 @@
 -- hisg - IRC stats generator.
 --
--- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
+-- Copyright (c) 2009-2011 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
 --
 -- Redistribution and use in source and binary forms, with or without
@@ -16,14 +16,13 @@
 --
 -- For further details, see LICENSE.
 --
---
 
 module Hisg.IRCLog where
 
 import System.IO
 import Data.Maybe
-import Control.Parallel.Strategies (NFData(..), rwhnf)
-
+import Control.Parallel.Strategies (rwhnf)
+import Control.DeepSeq
 import Hisg.Parser
 import Hisg.Types
 import Hisg.LineChunks
