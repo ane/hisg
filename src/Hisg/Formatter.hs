@@ -70,19 +70,19 @@ insertFooter :: String -> FormatterM ()
 insertFooter ver = do
     addOutput $ "</div><div id=\"footer\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></body></html>"
 
-insertScoreboard :: [(S.ByteString, (Int, Int))] -> FormatterM ()
+insertScoreboard :: [(S.ByteString, (Int, Int, Int))] -> FormatterM ()
 insertScoreboard users = do
     addOutput "<h2>Top 15 users</h2>"
     addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th></tr>"
-        ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> "
-        ++ S.unpack (fst u) ++ "</td><td>" ++ show ((fst . snd) u)
-        ++ "</td><td>" ++ show ((snd . snd) u)
+        ++ concatMap (\(rank, (nick, (lineCount, wordCount, _))) -> "<tr><td><b>" ++ show rank ++ ".</b> "
+        ++ S.unpack nick ++ "</td><td>" ++ show lineCount
+        ++ "</td><td>" ++ show wordCount
         ++ "</td></tr>") (zip [1..] users) ++ "</table>"
 
-insertKickScoreboard :: [(S.ByteString, Int)] -> FormatterM ()
+insertKickScoreboard :: [(S.ByteString, (Int, Int, Int))] -> FormatterM ()
 insertKickScoreboard users = do
     addOutput "<h2>Top 15 kickers</h2>"
     addOutput $ "<table>\n<tr><th>Nickname</th><th>Kicks</th></tr>"
-        ++ concatMap (\(rank, u) -> "<tr><td><b>" ++ show rank ++ ".</b> "
-        ++ S.unpack (fst u) ++ "</td><td>" ++ show (snd u)
+        ++ concatMap (\(rank, (nick, (_, _, kicks))) -> "<tr><td><b>" ++ show rank ++ ".</b> "
+        ++ S.unpack nick ++ "</td><td>" ++ show kicks
         ++ "</td></tr>") (zip [1..] users) ++ "</table>"
