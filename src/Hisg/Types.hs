@@ -74,7 +74,7 @@ instance Show Timestamp where
 instance Show LogEvent where
     show (Message ts nick content) = L.unpack $ L.concat [ts, L.pack " <", nick, L.pack "> ", content]
     show (Notification cont) = cont
-    show (DateChange (Date d m y)) = intercalate " " (map show [d, m, y])
+    show (DateChange (Date d m y)) = unwords (map show [d, m, y])
     show (CustomEvent ev) = show ev
     show (KickEvent (Kick ts author target reason)) = show ts ++ " " ++ author ++ " kicked " ++ target ++ ", reason: " ++ reason
 

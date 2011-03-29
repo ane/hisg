@@ -33,7 +33,7 @@ import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 
 --data IRCLog = IRCLog { filename :: String, contents :: [[LogEvent]] }
-data IRCLog = IRCLog { filename :: String, messageScores :: M.Map S.ByteString (Int, Int), kickScores :: M.Map S.ByteString Int }
+data IRCLog = IRCLog { filename :: String, userScores :: M.Map S.ByteString (Int, Int, Int) }
 
 instance NFData S.ByteString where
     rnf _ = ()    -- not built into Control.Parallel.Strategies
@@ -41,17 +41,7 @@ instance NFData S.ByteString where
 instance NFData LogEvent where
     rnf _ = ()
 
-parseInput :: [L.ByteString] -> [[LogEvent]]
-parseInput chunks = map conv chunks
-    where
-        conv inp = map (fromMaybe (Simple (L.pack "")) . (decode)) (L.lines inp)
+loadLog fn = do
+    userStats <- chunkedReadWith calcUserStats fn
+    return $ IRCLog fn userStats
 
-loadLog' fn = do
-    msgs <- chunkedReadWith calcMessageStats'' fn
-    kicks <- chunkedReadWith calcKickStats fn
-    return $ IRCLog fn msgs kicks
-
---loadLog :: String -> IO IRCLog
---loadLog fn = do
---    inp <- chunkedReadWith parseInput fn
---    return $ IRCLog fn inp
