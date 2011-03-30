@@ -11,7 +11,6 @@ module Hisg.Formats.Irssi (
 --    banEvent
     ) where
 
-import Hisg.Types
 import Hisg.Formats.Base
 import qualified Data.ByteString.Char8 as S
 
