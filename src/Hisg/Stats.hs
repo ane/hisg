@@ -61,7 +61,7 @@ matchMessage line statsMap = case match (compile normalMessageRegex []) (conv li
     -> M.insertWith' sumTriples nick (1, length . S.words . S.concat $ contents, 0) statsMap
   _ -> statsMap
 
-matchMessage :: L.ByteString                      -- our line
+matchKick :: L.ByteString                      -- our line
              -> StatsMap  -- our map
              -> StatsMap  -- our modified map if the line matches
 matchKick line map = case match (compile kickMessageRegex []) (conv line) [] of
