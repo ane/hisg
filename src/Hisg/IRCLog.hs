@@ -23,8 +23,6 @@ import System.IO
 import Data.Maybe
 import Control.Parallel.Strategies (rwhnf)
 import Control.DeepSeq
-import Hisg.Parser
-import Hisg.Types
 import Hisg.LineChunks
 import Hisg.Stats
 
@@ -37,9 +35,6 @@ data IRCLog = IRCLog { filename :: String, userScores :: M.Map S.ByteString (Int
 
 instance NFData S.ByteString where
     rnf _ = ()    -- not built into Control.Parallel.Strategies
-
-instance NFData LogEvent where
-    rnf _ = ()
 
 loadLog fn = do
     userStats <- chunkedReadWith calcUserStats fn
