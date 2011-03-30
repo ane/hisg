@@ -26,7 +26,6 @@ import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Text.Regex.PCRE.Light (compile, match)
 
-import Hisg.Types
 import Hisg.MapReduce
 import Hisg.Formats.Irssi
 

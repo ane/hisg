@@ -25,7 +25,6 @@ import Data.Maybe
 import Data.List
 import System.IO
 
-import Hisg.Types
 import Hisg.Stats
 import Hisg.Misc
 
