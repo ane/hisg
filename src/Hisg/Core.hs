@@ -67,19 +67,22 @@ parseLog fn cmd = do
 loadFile :: String -> HisgM ()
 loadFile inp = do
     logf <- liftIO $ do
-        putStrLn $ "Reading " ++ inp ++ "..."
-        loadLog inp
+        putStr $ "Processing " ++ inp ++ "..."
+        loaded <- loadLog inp
+        putStrLn $ "done."
+        return loaded
     addFile logf
 
--- slow and useless code that does nothing
+-- | Formats and writes each analyzed file.
 processFiles :: HisgM ()
 processFiles = do
     hst <- get
     mapM_ (liftIO . processLog) (files hst)
 
+-- | Formats a log file, producing HTML ouput.
 formatLog :: String -> IRCLog -> FormatterM String
 formatLog chan logf = do
-    let messagePopular (_, (a, _, _)) (_, (b, _, _)) = compare b a -- "!#¤/@%46%(348234yahdfsgfdssljshdf"
+    let messagePopular (_, (a, _, _)) (_, (b, _, _)) = compare b a
         kickPopular (_, (_, _, a)) (_, (_, _, b)) = compare b a
     insertHeaders chan
     insertScoreboard (take 15 . sortBy messagePopular . M.toList . userScores $ logf)
@@ -88,12 +91,14 @@ formatLog chan logf = do
     insertFooter "0.1.0"
     getFinalOutput
 
--- | Formats the log and writes the output to a file.
+-- | Formats and writes the output to a file.
 processLog :: IRCLog -> IO ()
 processLog logf = do
     let fn = takeWhile ('.' /=) $ filename logf
         out = fn ++ ".html"
+    putStr $ "Formatting " ++ filename logf ++ "..."
     output <- evalStateT (formatLog fn logf) (Formatter "")
+    putStrLn " done."
     putStr $ "Writing " ++ out ++ "..."
     outf <- openFile out WriteMode
     hPutStrLn outf output
