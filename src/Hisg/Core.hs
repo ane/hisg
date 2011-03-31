@@ -79,11 +79,19 @@ processFiles = do
     hst <- get
     mapM_ (liftIO . processLog) (files hst)
 
+compareIthJth :: (Ord k) => Int -> Int -> [k] -> [k] -> Ordering
+compareIthJth i j xs ys = compare jth ith
+  where
+    ith = xs !! i
+    jth = ys !! j
+
 -- | Formats a log file, producing HTML ouput.
 formatLog :: String -> IRCLog -> FormatterM String
 formatLog chan logf = do
-    let messagePopular (_, (a, _, _)) (_, (b, _, _)) = compare b a
-        kickPopular (_, (_, _, a)) (_, (_, _, b)) = compare b a
+    let messagePopular' (_, (a, _, _)) (_, (b, _, _)) = compare b a
+        messagePopular (_, aList) (_, bList) = compareIthJth 0 0 aList bList
+        kickPopular' (_, (_, _, a)) (_, (_, _, b)) = compare b a
+        kickPopular (_, aList) (_, bList) = compareIthJth 2 2 aList bList
     insertHeaders chan
     insertScoreboard (take 15 . sortBy messagePopular . M.toList . userScores $ logf)
     -- implement achievement code
