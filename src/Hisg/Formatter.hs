@@ -27,6 +27,7 @@ import System.IO
 
 import Hisg.Stats
 import Hisg.Misc
+import Hisg.Chart
 
 import qualified Data.ByteString.Char8 as S
 
@@ -69,19 +70,20 @@ insertFooter :: String -> FormatterM ()
 insertFooter ver = do
     addOutput $ "</div><div id=\"footer\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></body></html>"
 
-insertScoreboard :: [(S.ByteString, (Int, Int, Int))] -> FormatterM ()
+insertScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertScoreboard users = do
     addOutput "<h2>Top 15 users</h2>"
-    addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th></tr>"
-        ++ concatMap (\(rank, (nick, (lineCount, wordCount, _))) -> "<tr><td><b>" ++ show rank ++ ".</b> "
-        ++ S.unpack nick ++ "</td><td>" ++ show lineCount
-        ++ "</td><td>" ++ show wordCount
-        ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+    addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th><th>Activity</th></tr>"
+        ++ concatMap (\(rank, (nick, stats)) -> "<tr><td><b>" ++ show rank ++ ".</b> "
+        ++ S.unpack nick ++ "</td><td>" ++ show (stats !! 0)
+        ++ "<td>" ++ show (stats !! 1) ++ "</td>"
+        ++ "<td>" ++ generateHourlyActivityBarChart [stats !! 3, stats !! 4, stats !! 5, stats !! 6] ++ "</td>"
+        ++ "</tr>") (zip [1..] users) ++ "</table>"
 
-insertKickScoreboard :: [(S.ByteString, (Int, Int, Int))] -> FormatterM ()
+insertKickScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertKickScoreboard users = do
     addOutput "<h2>Top 15 kickers</h2>"
     addOutput $ "<table>\n<tr><th>Nickname</th><th>Kicks</th></tr>"
-        ++ concatMap (\(rank, (nick, (_, _, kicks))) -> "<tr><td><b>" ++ show rank ++ ".</b> "
-        ++ S.unpack nick ++ "</td><td>" ++ show kicks
+        ++ concatMap (\(rank, (nick, stats)) -> "<tr><td><b>" ++ show rank ++ ".</b> "
+        ++ S.unpack nick ++ "</td><td>" ++ show (stats !! 2)
         ++ "</td></tr>") (zip [1..] users) ++ "</table>"

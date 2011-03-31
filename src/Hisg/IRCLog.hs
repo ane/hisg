@@ -31,7 +31,7 @@ import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 
 --data IRCLog = IRCLog { filename :: String, contents :: [[LogEvent]] }
-data IRCLog = IRCLog { filename :: String, userScores :: M.Map S.ByteString (Int, Int, Int) }
+data IRCLog = IRCLog { filename :: String, userScores :: StatsMap}
 
 instance NFData S.ByteString where
     rnf _ = ()    -- not built into Control.Parallel.Strategies
