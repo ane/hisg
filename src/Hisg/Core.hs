@@ -27,6 +27,7 @@ import Data.List
 import System.IO
 import qualified Data.Map as M
 
+import qualified Data.ByteString.Char8 as S
 import Hisg.IRCLog
 import Hisg.Formatter
 import Hisg.Stats
@@ -53,24 +54,12 @@ getFile n = do
     hst <- get
     return $ listToMaybe $ filter (\logf -> filename logf == n) (files hst)
 
--- | Parses a log file according to the user commands.
-parseLog :: String -> Command -> HisgM (Maybe HisgChange)
-parseLog fn cmd = do
-    logf <- getFile fn
-    return $ do
-        l <- logf
-        case cmd of
-            Parse -> Just $ ParseFile l
-            Format -> Just $ FormatFile l
-
 -- | Loads a file and queues it for parsing.
 loadFile :: String -> HisgM ()
 loadFile inp = do
     logf <- liftIO $ do
-        putStr $ "Processing " ++ inp ++ "..."
-        loaded <- loadLog inp
-        putStrLn $ "done."
-        return loaded
+        putStrLn $ "Processing " ++ inp ++ "..."
+        loadLog inp
     addFile logf
 
 -- | Formats and writes each analyzed file.
@@ -85,17 +74,23 @@ compareIthJth i j xs ys = compare jth ith
     ith = xs !! i
     jth = ys !! j
 
+wordsLines :: [(S.ByteString, UserStats)] -> [(Int, Int)]
+wordsLines wl = let getWLtuple (_, ([l, w, _], _)) = (l, w) in map getWLtuple wl
+
 -- | Formats a log file, producing HTML ouput.
 formatLog :: String -> IRCLog -> FormatterM String
 formatLog chan logf = do
-    let messagePopular' (_, (a, _, _)) (_, (b, _, _)) = compare b a
-        messagePopular (_, aList) (_, bList) = compareIthJth 0 0 aList bList
-        kickPopular' (_, (_, _, a)) (_, (_, _, b)) = compare b a
-        kickPopular (_, aList) (_, bList) = compareIthJth 2 2 aList bList
+    let messagePopular (_, (aList, _)) (_, (bList, _)) = compareIthJth 0 0 aList bList
+        kickPopular (_, (aList, _)) (_, (bList, _)) = compareIthJth 2 2 aList bList
+        scoreList = M.toList . userScores $ logf
+        topMessages = sortBy messagePopular scoreList
+
     insertHeaders chan
-    insertScoreboard (take 15 . sortBy messagePopular . M.toList . userScores $ logf)
-    -- implement achievement code
-    insertKickScoreboard (take 15 . sortBy kickPopular . M.toList . userScores $ logf)
+
+    insertScoreboard (take 15 topMessages)
+
+    insertKickScoreboard (sortBy kickPopular (filter (\(_, ([_, _, k], _)) -> k > 0) scoreList))
+    insertWordsToLinesRatio (wordsLines . take 15 $ topMessages)
     insertFooter "0.1.0"
     getFinalOutput
 

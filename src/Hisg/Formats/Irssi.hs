@@ -17,7 +17,7 @@ import qualified Data.ByteString.Char8 as S
 
 -- | The timestamp is the time at which any event occurred.
 timeStampRegex :: String
-timeStampRegex = "(\\d{2}:\\d{2})"
+timeStampRegex = "(\\d{2}):\\d{2}"
 
 nickNameRegex :: String
 nickNameRegex = "([" ++ validNickChars ++ "]+)"

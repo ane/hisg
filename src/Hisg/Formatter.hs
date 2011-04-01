@@ -25,10 +25,14 @@ import Data.Maybe
 import Data.List
 import System.IO
 
+import Text.Printf
+
 import Hisg.Stats
 import Hisg.Misc
 import Hisg.Chart
+import Hisg.User
 
+import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S
 
 -- | The FormatterM monad provides a data abstraction layer between the formatted content
@@ -68,22 +72,49 @@ insertHeaders chan = do
 -- | Adds a small HTML footer.
 insertFooter :: String -> FormatterM ()
 insertFooter ver = do
-    addOutput $ "</div><div id=\"footer\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></body></html>"
+    addOutput $ "</div><div id=\"footer\"><div id=\"footercontent\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></div></body></html>"
 
 insertScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertScoreboard users = do
     addOutput "<h2>Top 15 users</h2>"
-    addOutput $ "<table>\n<tr><th>Nickname</th><th>Lines</th><th>Words</th><th>Activity</th></tr>"
-        ++ concatMap (\(rank, (nick, stats)) -> "<tr><td><b>" ++ show rank ++ ".</b> "
-        ++ S.unpack nick ++ "</td><td>" ++ show (stats !! 0)
-        ++ "<td>" ++ show (stats !! 1) ++ "</td>"
-        ++ "<td>" ++ generateHourlyActivityBarChart [stats !! 3, stats !! 4, stats !! 5, stats !! 6] ++ "</td>"
+    addOutput $ "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Words</th><th>Ratio</th><th>Activity by hour</th></tr>"
+        ++ concatMap (\(rank, (nick, stats)) ->
+        let lineC = head (fst stats)
+            wordC = (fst stats !! 1)
+            ratio = (fromIntegral wordC / fromIntegral lineC) in
+           "<tr><td><b>"
+        ++ show rank ++ ".</b></td><td> "
+        ++ S.unpack nick ++ "</td><td>" ++ show lineC
+        ++ "<td>" ++ show (fst stats !! 1) ++ "</td>"
+        ++ "<td>" ++ printf "%.02f" (ratio :: Float) ++ "</td>"
+        ++ "<td>"
+        ++ generateHourlyActivityBarChart (hourlyActivityToList (snd stats))
+        ++ "</td>"
         ++ "</tr>") (zip [1..] users) ++ "</table>"
 
+hourlyActivityToList :: HourStats -> [Int]
+hourlyActivityToList m = sums (M.toList m)
+  where
+    sums m_ = take 4 (map (sum . snd . unzip) (chunk 6 m_))
+
+openPanel :: FormatterM ()
+openPanel = addOutput "<div class=\"panel\">"
+
+closePanel :: FormatterM ()
+closePanel = addOutput "</div>"
+
+insertWordsToLinesRatio :: [(Int, Int)] -> FormatterM ()
+insertWordsToLinesRatio wl = addOutput $ generateWordsToLinesRatio wl
+
 insertKickScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
-insertKickScoreboard users = do
-    addOutput "<h2>Top 15 kickers</h2>"
-    addOutput $ "<table>\n<tr><th>Nickname</th><th>Kicks</th></tr>"
-        ++ concatMap (\(rank, (nick, stats)) -> "<tr><td><b>" ++ show rank ++ ".</b> "
-        ++ S.unpack nick ++ "</td><td>" ++ show (stats !! 2)
-        ++ "</td></tr>") (zip [1..] users) ++ "</table>"
+insertKickScoreboard [] = do openPanel; addOutput "Nobody kicked anyone in the channel."; closePanel
+insertKickScoreboard ((fist, ([_, _, kicks], _)):_) = do
+  openPanel
+  addOutput ("<b>" ++ S.unpack fist ++ "</b>")
+  addOutput " ruled with an iron fist. He kicked <b>"
+  addOutput (show kicks)
+  addOutput "</b> people out of the channel!"
+  closePanel
+
+
+

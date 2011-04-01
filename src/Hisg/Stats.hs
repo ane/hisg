@@ -26,57 +26,62 @@ import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Text.Regex.PCRE.Light (compile, match)
 
+import Text.Printf
+
 import Hisg.MapReduce
 import Hisg.Formats.Irssi
 
+-- | An empty hourly distribution map.
+emptyHourStats :: M.Map S.ByteString Int
+emptyHourStats = M.fromList (zip (map (\x -> S.pack (printf "%02d" (x::Int))) [0 .. 23]) (repeat 0))
+
 -- | lines, words, kicks, night, morning, afternoon, evening
-type UserStats = [Int]
+type UserStats = ([Int], HourStats)
+type HourStats = M.Map S.ByteString Int
 type StatsMap = M.Map S.ByteString UserStats
 
-
 -- | Calculates statistics for an user, currently lines, words and kicks given.
--- Will eventually calculate everything you can use integers for, i.e.
--- joins, quits, parts etc.
+--   I am not sure whether I'd want to calculate anything more than daily and
+--   monthly trends (besides user word count and word to line ration etc.), as
+--   that is not really pertinent. Activity analysis is where it's at, hell yes.
 calcUserStats :: [L.ByteString] -> StatsMap
 calcUserStats = mapReduce rseq (foldl' matchAll M.empty . L.lines)
-                   rseq (M.unionsWith sumList)
+                   rseq (M.unionsWith sumUser)
 
-matchAll :: StatsMap                       -- our line
-         -> L.ByteString  -- our map
-         -> StatsMap  -- our modified map if the line matches
-matchAll m l = matchKick l . matchMessage l $ m
-
-matchMessage :: L.ByteString -> StatsMap -> StatsMap  -- our modified map if the line matches
-matchMessage line statsMap = case match (compile normalMessageRegex []) (conv line) [] of
-  Just (_:ts:nick:contents)
-    -> let hours = getHours ts in M.insertWith' sumList nick [1, length . S.words . S.concat $ contents, 0, night hours, morning hours, afternoon hours, evening hours] statsMap
-  _ -> statsMap
+-- | Chains all matches together. TODO: implement this in a non-stupid way.
+matchAll :: StatsMap -> L.ByteString -> StatsMap
+matchAll m l = matchKick convd . matchMessage convd $ m
   where
-    getHours ts = case (S.readInt ts) of
-                    Just (x, _) -> x
-                    _ -> 0
-    night h | 0 <= h && h < 6 = 1
-            | otherwise = 0
-    morning h | 6 <= h && h < 12 = 1
-              | otherwise = 0
-    afternoon h | 12 <= h && h < 18 = 1
-                | otherwise = 0
-    evening h | 18 <= h && h < 24 = 1
-              | otherwise = 0
+    convd = conv l
 
-matchKick :: L.ByteString                      -- our line
-             -> StatsMap  -- our map
-             -> StatsMap  -- our modified map if the line matches
-matchKick line map = case match (compile kickMessageRegex []) (conv line) [] of
+-- | Increases the message line count and word count and modifies an users's hour distribution
+--   should the regexp match.
+matchMessage :: S.ByteString -> StatsMap -> StatsMap  -- our modified map if the line matches
+matchMessage line statsMap = case match (compile normalMessageRegex []) line [] of
+  Just (_:hour:nick:contents:_)
+    -> M.insertWith' (incMessage hour) nick newValue statsMap
+      where
+        newValue = ([1, length . S.words $ contents, 0], M.adjust (+ 1) hour emptyHourStats)
+  _ -> statsMap
+
+-- | Increases the kick count of a user if the regex matches.
+matchKick :: S.ByteString -> StatsMap -> StatsMap
+matchKick line map = case match (compile kickMessageRegex []) line [] of
   Just (_:_:_:_:nick:_)
-    -> M.insertWith' sumList nick [0, 0, 1, 0, 0, 0, 0] map
+    -> M.insertWith' incKick nick ([0, 0, 1], M.empty) map
   _ -> map
 
 conv = S.concat . L.toChunks
 
-sumList = zipWith (+)
+incKick :: UserStats -> UserStats -> UserStats
+incKick _ ([l, w, k], ts) = ([l, w, succ k], ts)
 
--- I should REALLY REALLY (YES) implement this stuff as a list. but oh well.
-sumN (a, b, c, d, e, f, g) (a', b', c', d', e', f', g') = (a+a', b+b', c+c', d+d', e+e', f+f', g+g')
-sumTriples (a,b,c) (d,e,f) = (a+d, b+e, c+f)
+incMessage :: S.ByteString -> UserStats -> UserStats -> UserStats
+incMessage ts ([_, wc', _], _) ([lc, wc, kc], hs) = ([succ lc, wc+wc', kc], incHour hs)
+  where
+    incHour = M.adjust (+ 1) ts
+
+-- | Joins two sets of user data into one.
+sumUser :: UserStats -> UserStats -> UserStats
+sumUser (xs@[l, w, k], hs) (xs'@[l', w', k'], hs') = (zipWith (+) xs xs', M.unionWith (+) hs hs')
 
