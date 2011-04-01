@@ -20,7 +20,8 @@ module Hisg.Misc (
     invqsort,
     common,
     mostCommon,
-    cmp
+    cmp,
+    chunk
     ) where
 
 import Data.List
@@ -30,6 +31,13 @@ invqsort (x:xs) = invqsort (filter (>= x) xs) ++ [x] ++ invqsort (filter (< x) x
 
 cmp xs ys | length xs > length ys = LT
           | otherwise = GT
+
+-- | split at regular intervals
+chunk :: Int -> [a] -> [[a]]
+chunk _ [] = [[]]
+chunk n xs = y1 : chunk n y2
+  where
+    (y1, y2) = splitAt n xs
 
 common :: (Ord a) => [a] -> [[a]]
 common [] = []
