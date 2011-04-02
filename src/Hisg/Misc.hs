@@ -21,7 +21,8 @@ module Hisg.Misc (
     common,
     mostCommon,
     cmp,
-    chunk
+    chunk,
+    crevf
     ) where
 
 import Data.List
@@ -46,4 +47,6 @@ common xs = let sorted = (reverse . invqsort) xs in sortBy cmp $ group $ sorted
 mostCommon [] = []
 mostCommon list@(x:xs) = head . common $ list
 
-
+crevf [] _ = []
+crevf _ [] = []
+crevf xs yL@(y:ys) = let f x = y in (take 6 $ map f xs) : (crevf xs ys)

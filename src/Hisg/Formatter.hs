@@ -88,14 +88,26 @@ insertScoreboard users = do
         ++ "<td>" ++ show (fst stats !! 1) ++ "</td>"
         ++ "<td>" ++ printf "%.02f" (ratio :: Float) ++ "</td>"
         ++ "<td>"
-        ++ generateHourlyActivityBarChart (hourlyActivityToList (snd stats))
+        ++ generateUserHourlyActivityBarChart (hourlyActivityToList (snd stats))
         ++ "</td>"
-        ++ "</tr>") (zip [1..] users) ++ "</table>"
+        ++ "</tr>") (zip [1..] users) ++ "</table><p>" ++ "</p>"
 
 hourlyActivityToList :: HourStats -> [Int]
 hourlyActivityToList m = sums (M.toList m)
   where
     sums m_ = take 4 (map (sum . snd . unzip) (chunk 6 m_))
+
+-- | Unions the hourly data of all users, producing a map where the key is
+--   an hour and the value is the number of lines spoken during that hour,
+--   allowing us to generate a chart of hourly activity.
+sumHours :: [(S.ByteString, UserStats)] -> HourStats
+sumHours userStats = M.unionsWith (+) (snd (unzip (getUserHourData userStats)))
+
+-- | Extracts user hour stats from an user tuple.
+getUserHourData :: [(S.ByteString, UserStats)] -> [(S.ByteString, HourStats)]
+getUserHourData = map getHourStats
+  where
+    getHourStats (n, (_, hs)) = (n, hs)
 
 openPanel :: FormatterM ()
 openPanel = addOutput "<div class=\"panel\">"
@@ -106,6 +118,12 @@ closePanel = addOutput "</div>"
 insertWordsToLinesRatio :: [(Int, Int)] -> FormatterM ()
 insertWordsToLinesRatio wl = addOutput $ generateWordsToLinesRatio wl
 
+insertHourlyActivity :: [(S.ByteString, UserStats)] -> FormatterM ()
+insertHourlyActivity stats = addOutput $ generateChannelHourlyActivityBarChart hourValues
+  where
+    hourValues = snd (unzip (M.toList (sumHours stats)))
+
+
 insertKickScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertKickScoreboard [] = do openPanel; addOutput "Nobody kicked anyone in the channel."; closePanel
 insertKickScoreboard ((fist, ([_, _, kicks], _)):_) = do
@@ -115,6 +133,4 @@ insertKickScoreboard ((fist, ([_, _, kicks], _)):_) = do
   addOutput (show kicks)
   addOutput "</b> people out of the channel!"
   closePanel
-
-
 
