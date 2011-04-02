@@ -57,9 +57,8 @@ calcUserStats = mapReduce rseq (foldl' matchAll M.empty . L.lines)
 
 -- | Chains all matches together. TODO: implement this in a non-stupid way.
 matchAll :: StatsMap -> L.ByteString -> StatsMap
-matchAll m line = fromMaybe (fromMaybe m (matchKick l m)) (matchMessage l m)
-  where
-    l = conv line
+matchAll m line = let converted = conv line in
+                  fromMaybe (fromMaybe m (matchKick converted m)) (matchMessage converted m)
 
 -- | Increases the message line count and word count and modifies an users's hour distribution
 --   should the regexp match.

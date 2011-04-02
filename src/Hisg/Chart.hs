@@ -31,9 +31,11 @@ siteColours :: [String]
 siteColours = ["330570", "7C1F7C", "996AD6", "8243D6"]
 
 generateCharsToLinesRatio :: [(String, Int, Int)] -> String
-generateCharsToLinesRatio wl = linkImg $ urlBase ++ chartData ++ nameMarkers wL
+generateCharsToLinesRatio wl =
+    linkImg $ urlBase ++ chartData ++ nameMarkers wL
   where
     urlBase = "http://chart.apis.google.com/chart?chxl=0:|More characters|1:|More lines&chxp=0,100|1,100&chxs=0,313186,11.5,0,l,4F4FD9|1,313186,11.5,0,lt,4F4FD9&chxt=x,y&chs=640x320&cht=s&chco=330570|313184&chds="++show (0 - fromIntegral (mostChars wL) * (0.25))++","++show (fromIntegral (mostChars wL) * 1.25)++","++show (0 - fromIntegral (mostLines wL) * (0.25))++","++show (fromIntegral (mostLines wL) * 1.25)++",0,100&chg=10,10&chtt=Characters+per+line+ratio+distribution&chts=6C006C,17.5&chd=t:"
+
     chartData = wordData ++ "|" ++ lineData
     wL = unzip3 wl
     lines_ (_, l, _) = l
@@ -42,10 +44,12 @@ generateCharsToLinesRatio wl = linkImg $ urlBase ++ chartData ++ nameMarkers wL
     leastLines (_, l, _) = minimum (lines_ wL)
     mostChars (_, _, c) = maximum (chars wL)
     leastChars (_, _, c) = minimum (chars wL)
+
     nameMarkers :: ([String], [Int], [Int]) -> String
     nameMarkers (nicks, _, _) = "&chm=d,6C006C,0,4,5|" ++ intercalate "|" (map makeMarker (zip [0..] nicks))
     makeMarker :: (Int, String) -> String
     makeMarker (idx, nick) = printf "t%s,000000,0,%d,10,,h:0:4" nick idx
+
     lineData = intercalate "," (map show (lines_ wL))
     wordData = intercalate "," (map show (chars wL))
 

@@ -61,33 +61,30 @@ getFinalOutput = do
 
 -- | Adds HTML headers to the output.
 insertHeaders :: String -> FormatterM ()
-insertHeaders chan = do
-    addOutput str
-    where
-        str =   "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
+insertHeaders chan =
+    addOutput $ "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
              ++ "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
              ++ "</style>\n<body><div id=\"head\">\n"
              ++ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1></div><div id=\"main\">"
 
 -- | Adds a small HTML footer.
 insertFooter :: String -> FormatterM ()
-insertFooter ver = do
+insertFooter ver =
     addOutput $ "</div><div id=\"footer\"><div id=\"footercontent\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></div></body></html>"
 
 insertScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
-insertScoreboard users = do
-    addOutput "<h2>Top 15 users</h2>"
-    addOutput $ "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Characters per line</th><th>Activity by hour</th></tr>"
-        ++ concatMap (\(rank, (nick, stats)) ->
-        let lineC = head (fst stats)
-            wordC = (fst stats !! 1)
-            ratio = (fromIntegral wordC / fromIntegral lineC) in
-           "<tr><td><b>"
+insertScoreboard users = addOutput $
+    "<h2>Top 15 users</h2>" ++
+    "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Characters per line</th><th>Activity by hour</th></tr>"
+    ++
+    concatMap (\(rank, (nick, ([lineC, wordC, _], hours))) ->
+    let ratio = (fromIntegral wordC / fromIntegral lineC) in
+        "<tr><td><b>"
         ++ show rank ++ ".</b></td><td> "
         ++ S.unpack nick ++ "</td><td>" ++ show lineC
         ++ "<td>" ++ printf "%.02f" (ratio :: Float) ++ "</td>"
         ++ "<td>"
-        ++ generateUserHourlyActivityBarChart (hourlyActivityToList (snd stats))
+        ++ generateUserHourlyActivityBarChart (hourlyActivityToList hours)
         ++ "</td>"
         ++ "</tr>") (zip [1..] users) ++ "</table><p>" ++ "</p>"
 

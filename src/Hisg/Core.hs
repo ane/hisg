@@ -84,12 +84,8 @@ formatLog chan logf = do
         kickPopular (_, (aList, _)) (_, (bList, _)) = compareIthJth 2 2 aList bList
         scoreList = M.toList . userScores $ logf
         topMessages = sortBy messagePopular scoreList
-
     insertHeaders chan
-
     insertScoreboard (take 15 topMessages)
-
-    insertKickScoreboard (sortBy kickPopular (filter (\(_, ([_, _, k], _)) -> k > 0) scoreList))
     insertHourlyActivity scoreList
     insertCharsToLinesRatio (charsLines (take 15 topMessages))
     insertFooter "0.1.0"
