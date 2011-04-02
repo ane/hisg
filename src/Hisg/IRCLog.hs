@@ -33,9 +33,6 @@ import qualified Data.ByteString.Lazy.Char8 as L
 --data IRCLog = IRCLog { filename :: String, contents :: [[LogEvent]] }
 data IRCLog = IRCLog { filename :: String, userScores :: StatsMap}
 
-instance NFData S.ByteString where
-    rnf _ = ()    -- not built into Control.Parallel.Strategies
-
 loadLog fn = do
     userStats <- chunkedReadWith calcUserStats fn
     return $ IRCLog fn userStats
