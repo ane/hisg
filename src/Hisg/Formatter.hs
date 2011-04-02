@@ -77,7 +77,7 @@ insertFooter ver = do
 insertScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertScoreboard users = do
     addOutput "<h2>Top 15 users</h2>"
-    addOutput $ "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Words</th><th>Ratio</th><th>Activity by hour</th></tr>"
+    addOutput $ "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Characters per line</th><th>Activity by hour</th></tr>"
         ++ concatMap (\(rank, (nick, stats)) ->
         let lineC = head (fst stats)
             wordC = (fst stats !! 1)
@@ -85,7 +85,6 @@ insertScoreboard users = do
            "<tr><td><b>"
         ++ show rank ++ ".</b></td><td> "
         ++ S.unpack nick ++ "</td><td>" ++ show lineC
-        ++ "<td>" ++ show (fst stats !! 1) ++ "</td>"
         ++ "<td>" ++ printf "%.02f" (ratio :: Float) ++ "</td>"
         ++ "<td>"
         ++ generateUserHourlyActivityBarChart (hourlyActivityToList (snd stats))
@@ -115,8 +114,8 @@ openPanel = addOutput "<div class=\"panel\">"
 closePanel :: FormatterM ()
 closePanel = addOutput "</div>"
 
-insertWordsToLinesRatio :: [(Int, Int)] -> FormatterM ()
-insertWordsToLinesRatio wl = addOutput $ generateWordsToLinesRatio wl
+insertCharsToLinesRatio :: [(String, Int, Int)] -> FormatterM ()
+insertCharsToLinesRatio wl = addOutput $ generateCharsToLinesRatio wl
 
 insertHourlyActivity :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertHourlyActivity stats = addOutput $ generateChannelHourlyActivityBarChart hourValues

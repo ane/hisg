@@ -74,8 +74,8 @@ compareIthJth i j xs ys = compare jth ith
     ith = xs !! i
     jth = ys !! j
 
-wordsLines :: [(S.ByteString, UserStats)] -> [(Int, Int)]
-wordsLines wl = let getWLtuple (_, ([l, w, _], _)) = (l, w) in map getWLtuple wl
+charsLines :: [(S.ByteString, UserStats)] -> [(String, Int, Int)]
+charsLines wl = let getCLtriple (nick, ([l, c, _], _)) = (S.unpack nick, l, c) in map getCLtriple wl
 
 -- | Formats a log file, producing HTML ouput.
 formatLog :: String -> IRCLog -> FormatterM String
@@ -90,8 +90,8 @@ formatLog chan logf = do
     insertScoreboard (take 15 topMessages)
 
     insertKickScoreboard (sortBy kickPopular (filter (\(_, ([_, _, k], _)) -> k > 0) scoreList))
-    insertWordsToLinesRatio (wordsLines . take 15 $ topMessages)
     insertHourlyActivity scoreList
+    insertCharsToLinesRatio (charsLines (take 15 topMessages))
     insertFooter "0.1.0"
     getFinalOutput
 

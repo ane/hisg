@@ -68,7 +68,7 @@ matchMessage line statsMap = case match (compile normalMessageRegex []) line [] 
   Just (_:hour:nick:contents:_)
     -> Just $ M.insertWith' (incMessage hour) nick newValue statsMap
       where
-        newValue = ([1, length . S.words $! contents, 0], M.adjust succ hour emptyHourStats)
+        newValue = ([1, contents `pseq` S.length contents, 0], M.adjust succ hour emptyHourStats)
   _ -> Nothing
 
 -- | Increases the kick count of a user if the regex matches.
