@@ -25,9 +25,10 @@ import Control.Monad
 import Text.Printf
 import System.IO
 
+import Hisg.Misc
+
 siteColours :: [String]
 siteColours = ["330570", "7C1F7C", "996AD6", "8243D6"]
-
 
 generateWordsToLinesRatio :: [(Int, Int)] -> String
 generateWordsToLinesRatio wl = linkImg $ urlBase ++ chartData
@@ -40,8 +41,15 @@ generateWordsToLinesRatio wl = linkImg $ urlBase ++ chartData
     lineData = intercalate "," (map show (fst wL))
     wordData = intercalate "," (map show (snd wL))
 
-generateHourlyActivityBarChart :: [Int] -> String
-generateHourlyActivityBarChart hours = linkImg $ urlBase ++ chartData
+generateChannelHourlyActivityBarChart :: [Int] -> String
+generateChannelHourlyActivityBarChart hours = linkImg $ urlBase ++ chartData
+  where
+    urlBase = "http://chart.apis.google.com/chart?chxr=0,0,"++show (maximum hours)++"&chxs=0,49188F,11.5,0,l,444444|1,49188F,11.5,0,lt,676767&chxt=y,x&chbh=a,4,0&chs=440x220&cht=bvs&chco="++colours++"&chds=0,"++show (maximum hours)++"&chg=0,15&chtt=Activity+per+hour&chts=6C006C,18.5&chd=t:"
+    chartData = intercalate "," (map show hours)
+    colours = intercalate "|" (concat (crevf [0..23] siteColours))
+
+generateUserHourlyActivityBarChart :: [Int] -> String
+generateUserHourlyActivityBarChart hours = linkImg $ urlBase ++ chartData
   where
     urlBase = "http://chart.apis.google.com/chart?chbh=a,0,0&chs=140x20&cht=bhs&chco=" ++ colours ++ "&chds=0,1,0,1,0,1,0,1&chd=t:"
     chartData = intercalate "|" $ map (\x -> show (fromIntegral x / fromIntegral total)) hours

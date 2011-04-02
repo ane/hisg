@@ -68,7 +68,7 @@ matchMessage line statsMap = case match (compile normalMessageRegex []) line [] 
   Just (_:hour:nick:contents:_)
     -> Just $ M.insertWith' (incMessage hour) nick newValue statsMap
       where
-        newValue = ([1, length . S.words $! contents, 0], M.adjust (+ 1) hour emptyHourStats)
+        newValue = ([1, length . S.words $! contents, 0], M.adjust succ hour emptyHourStats)
   _ -> Nothing
 
 -- | Increases the kick count of a user if the regex matches.
@@ -86,7 +86,7 @@ incKick _ ([l, w, k], ts) = ([l, w, succ k], ts)
 incMessage :: S.ByteString -> UserStats -> UserStats -> UserStats
 incMessage ts ([_, wc', _], _) ([lc, wc, kc], hs) = wc `pseq` wc' `pseq` lc `pseq` ([succ lc, wc+wc', kc], incHour hs)
   where
-    incHour = ts `pseq` M.adjust (+ 1) ts
+    incHour = ts `pseq` M.adjust succ ts
 
 -- | Joins two sets of user data into one.
 sumUser :: UserStats -> UserStats -> UserStats

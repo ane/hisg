@@ -91,6 +91,7 @@ formatLog chan logf = do
 
     insertKickScoreboard (sortBy kickPopular (filter (\(_, ([_, _, k], _)) -> k > 0) scoreList))
     insertWordsToLinesRatio (wordsLines . take 15 $ topMessages)
+    insertHourlyActivity scoreList
     insertFooter "0.1.0"
     getFinalOutput
 
