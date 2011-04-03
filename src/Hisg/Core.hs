@@ -97,7 +97,8 @@ processLog logf = do
     let fn = takeWhile ('.' /=) $ filename logf
         out = fn ++ ".html"
     putStr $ "Formatting " ++ filename logf ++ "..."
-    output <- evalStateT (formatLog fn logf) (Formatter "")
+    output <- let stats = userScores logf in
+              evalStateT (formatLog fn logf) (Formatter "" stats)
     putStrLn " done."
     putStr $ "Writing " ++ out ++ "..."
     outf <- openFile out WriteMode

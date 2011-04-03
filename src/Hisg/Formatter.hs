@@ -45,13 +45,13 @@ import qualified Data.ByteString.Char8 as S
 -- TODO: Turn this to use WriterT. Using StateT for appending is slow.
 type FormatterM = StateT Formatter IO
 
-data Formatter = Formatter { output :: String }
+data Formatter = Formatter { output :: String, stats :: StatsMap }
 
 -- | Adds output to the content.
 addOutput :: String -> FormatterM()
 addOutput str = do
     fmst <- get
-    put $ Formatter $ (output fmst) ++ str
+    put $ Formatter ((output fmst) ++ str) (stats fmst)
 
 -- | Gets the final output.
 getFinalOutput :: FormatterM String
@@ -118,7 +118,6 @@ insertHourlyActivity :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertHourlyActivity stats = addOutput $ generateChannelHourlyActivityBarChart hourValues
   where
     hourValues = snd (unzip (M.toList (sumHours stats)))
-
 
 insertKickScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
 insertKickScoreboard [] = do openPanel; addOutput "Nobody kicked anyone in the channel."; closePanel
