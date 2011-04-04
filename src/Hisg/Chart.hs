@@ -36,7 +36,7 @@ generateCharsToLinesRatio wl =
 
   where
 
-    urlBase = "http://chart.apis.google.com/chart?chxl=0:|More characters|1:|More lines&chxp=0,100|1,100&chxs=0,313186,11.5,0,l,4F4FD9|1,313186,11.5,0,lt,4F4FD9&chxt=x,y&chs=640x320&cht=s&chco=330570|313184&chds="++show (0 - fromIntegral (mostChars wL) * (0.25))++","++show (fromIntegral (mostChars wL) * 1.25)++","++show (0 - fromIntegral (mostLines wL) * (0.25))++","++show (fromIntegral (mostLines wL) * 1.25)++",0,100&chg=10,10&chtt=Characters+per+line+ratio+distribution&chts=6C006C,17.5&chd=t:"
+    urlBase = "http://chart.apis.google.com/chart?chxl=0:|More characters|1:|More lines&chxp=0,100|1,100&chxs=0,313186,11.5,0,l,4F4FD9|1,313186,11.5,0,lt,4F4FD9&chxt=x,y&chs=640x320&cht=s&chco=330570|313184&chds="++show (negate (fromIntegral (mostChars wL) * 0.25))++","++show (fromIntegral (mostChars wL) * 1.25)++","++show (negate (fromIntegral (mostLines wL) * (0.25)))++","++show (fromIntegral (mostLines wL) * 1.25)++",0,100&chg=10,10&chtt=Characters+per+line+ratio+distribution&chts=6C006C,17.5&chd=t:"
 
     chartData = wordData ++ "|" ++ lineData
     wL = unzip3 wl

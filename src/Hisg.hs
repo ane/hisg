@@ -30,6 +30,8 @@ import Control.Monad.Trans
 import Control.Monad.State.Lazy
 
 import Hisg.Core
+import Hisg.Formatter
+import Hisg.IRCLog
 
 version_ = "0.1.0"
 
@@ -49,12 +51,22 @@ options =
 usage :: String
 usage = usageInfo "Usage: hisg [option...] INPUTFILES" options
 
+-- | Formats a log file, producing HTML ouput.
+layout :: String -> IRCLog -> FormatterM String
+layout chan logf = do
+    headers chan
+    scoreboard 15
+    hourlyActivity
+    charsToLinesRatio
+    footer "0.1.0"
+    getFinalOutput
+
 -- | Parses the command line options and then processes files (if any).
 runHisg :: [String] -> HisgM ()
-runHisg [] = loadFile "sekopaat.log" >> processFiles -- TEST LOG, REPLACE WITH USAGE
+runHisg [] = loadFile "sekopaat.log" >> processFiles layout -- TEST LOG, REPLACE WITH USAGE
 runHisg args = do
     runArgs args
-    processFiles
+    processFiles layout
 
 runArgs :: [String] -> HisgM ()
 runArgs args =

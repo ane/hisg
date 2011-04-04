@@ -19,6 +19,8 @@
 
 -- | Implements the Hisg state monad, used to contain log files to be parsed
 -- | and the actions to do with them.
+--
+
 module Hisg.Core where
 
 import Control.Monad.State.Lazy
@@ -44,9 +46,9 @@ data HisgChange = ParseFile IRCLog
 
 -- | Adds a log file into the parsing bucket.
 addFile :: IRCLog -> HisgM ()
-addFile l = do
-    hst <- get
-    put $ Hisg $ l : files hst
+addFile ircLog = do
+    oldFiles <- files `liftM` get
+    put $ Hisg $ ircLog : oldFiles
 
 -- | Gets a file from the parsing bucket. Names are unique.
 getFile :: String -> HisgM (Maybe IRCLog)
@@ -58,47 +60,25 @@ getFile n = do
 loadFile :: String -> HisgM ()
 loadFile inp = do
     logf <- liftIO $ do
-        putStrLn $ "Processing " ++ inp ++ "..."
-        loadLog inp
+              putStrLn $ "Processing " ++ inp ++ "..."
+              loadLog inp
     addFile logf
 
 -- | Formats and writes each analyzed file.
-processFiles :: HisgM ()
-processFiles = do
-    hst <- get
-    mapM_ (liftIO . processLog) (files hst)
+processFiles :: (String -> IRCLog -> FormatterM String) -> HisgM ()
+processFiles formatter = do
+    fileBucket <- files `fmap` get
+    mapM_ (\x -> liftIO (processLog x formatter)) fileBucket
 
-compareIthJth :: (Ord k) => Int -> Int -> [k] -> [k] -> Ordering
-compareIthJth i j xs ys = compare jth ith
-  where
-    ith = xs !! i
-    jth = ys !! j
 
-charsLines :: [(S.ByteString, UserStats)] -> [(String, Int, Int)]
-charsLines wl = let getCLtriple (nick, ([l, c, _], _)) = (S.unpack nick, l, c) in map getCLtriple wl
-
--- | Formats a log file, producing HTML ouput.
-formatLog :: String -> IRCLog -> FormatterM String
-formatLog chan logf = do
-    let messagePopular (_, (aList, _)) (_, (bList, _)) = compareIthJth 0 0 aList bList
-        kickPopular (_, (aList, _)) (_, (bList, _)) = compareIthJth 2 2 aList bList
-        scoreList = M.toList . userScores $ logf
-        topMessages = sortBy messagePopular scoreList
-    insertHeaders chan
-    insertScoreboard (take 15 topMessages)
-    insertHourlyActivity scoreList
-    insertCharsToLinesRatio (charsLines (take 15 topMessages))
-    insertFooter "0.1.0"
-    getFinalOutput
-
--- | Formats and writes the output to a file.
-processLog :: IRCLog -> IO ()
-processLog logf = do
-    let fn = takeWhile ('.' /=) $ filename logf
+-- | Formats and writes the output to a file using the formatter.
+processLog :: IRCLog -> (String -> IRCLog -> FormatterM String) -> IO ()
+processLog ircLog formatterFunc = do
+    let fn = takeWhile ('.' /=) $ filename ircLog
         out = fn ++ ".html"
-    putStr $ "Formatting " ++ filename logf ++ "..."
-    output <- let stats = userScores logf in
-              evalStateT (formatLog fn logf) (Formatter "" stats)
+    putStr $ "Formatting " ++ filename ircLog ++ "..."
+    output <- let stats = userScores ircLog in
+              evalStateT (formatterFunc fn ircLog) (Formatter "" stats)
     putStrLn " done."
     putStr $ "Writing " ++ out ++ "..."
     outf <- openFile out WriteMode

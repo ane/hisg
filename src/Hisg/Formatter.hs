@@ -55,38 +55,41 @@ addOutput str = do
 
 -- | Gets the final output.
 getFinalOutput :: FormatterM String
-getFinalOutput = do
-    fmst <- get
-    return (output fmst)
+getFinalOutput = output `fmap` get
 
 -- | Adds HTML headers to the output.
-insertHeaders :: String -> FormatterM ()
-insertHeaders chan =
+headers :: String -> FormatterM ()
+headers chan =
     addOutput $ "<html>\n<head><title>Statistics for #" ++ chan ++ "</title>"
              ++ "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
              ++ "</style>\n<body><div id=\"head\">\n"
              ++ "<h1>Statistics for #" ++ takeWhile (/= '.') chan ++ "</h1></div><div id=\"main\">"
 
--- | Adds a small HTML footer.
-insertFooter :: String -> FormatterM ()
-insertFooter ver =
+-- | Adds a small HTML footer using @ver@ as the version number.
+footer :: String -> FormatterM ()
+footer ver =
     addOutput $ "</div><div id=\"footer\"><div id=\"footercontent\"><p>Generated with <a href=\"http://ane.github.com/hisg\">hisg</a> v" ++ ver ++ "</p></div></div></body></html>"
 
-insertScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
-insertScoreboard users = addOutput $
-    "<h2>Top 15 users</h2>" ++
-    "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Characters per line</th><th>Activity by hour</th></tr>"
-    ++
-    concatMap (\(rank, (nick, ([lineC, wordC, _], hours))) ->
-    let ratio = (fromIntegral wordC / fromIntegral lineC) in
-        "<tr><td><b>"
-        ++ show rank ++ ".</b></td><td> "
-        ++ S.unpack nick ++ "</td><td>" ++ show lineC
-        ++ "<td>" ++ printf "%.02f" (ratio :: Float) ++ "</td>"
-        ++ "<td>"
-        ++ generateUserHourlyActivityBarChart (hourlyActivityToList hours)
-        ++ "</td>"
-        ++ "</tr>") (zip [1..] users) ++ "</table><p>" ++ "</p>"
+-- | Inserts a scoreboard where @n@ is the number of users shown. If n is zero
+--   it defaults to 15.
+scoreboard :: Int -> FormatterM ()
+scoreboard n | n == 0 = scoreboard 15
+             | otherwise = do
+    userStats <- (take n . topMessages . M.toList . stats) `fmap` get
+    addOutput $
+        "<h2>Top 15 users</h2>" ++
+        "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Characters per line</th><th>Activity by hour</th></tr>"
+        ++
+        concatMap (\(rank, (nick, ([lineC, wordC, _], hours))) ->
+        let ratio = (fromIntegral wordC / fromIntegral lineC) in
+            "<tr><td><b>"
+            ++ show rank ++ ".</b></td><td> "
+            ++ S.unpack nick ++ "</td><td>" ++ show lineC
+            ++ "<td>" ++ printf "%.02f" (ratio :: Float) ++ "</td>"
+            ++ "<td>"
+            ++ generateUserHourlyActivityBarChart (hourlyActivityToList hours)
+            ++ "</td>"
+            ++ "</tr>") (zip [1..] userStats) ++ "</table><p>" ++ "</p>"
 
 hourlyActivityToList :: HourStats -> [Int]
 hourlyActivityToList m = sums (M.toList m)
@@ -111,21 +114,39 @@ openPanel = addOutput "<div class=\"panel\">"
 closePanel :: FormatterM ()
 closePanel = addOutput "</div>"
 
-insertCharsToLinesRatio :: [(String, Int, Int)] -> FormatterM ()
-insertCharsToLinesRatio wl = addOutput $ generateCharsToLinesRatio wl
+messagePopular (_, (aList, _)) (_, (bList, _)) = compareIthJth 0 0 aList bList
+kickPopular (_, (aList, _)) (_, (bList, _)) = compareIthJth 2 2 aList bList
+topMessages = sortBy messagePopular
 
-insertHourlyActivity :: [(S.ByteString, UserStats)] -> FormatterM ()
-insertHourlyActivity stats = addOutput $ generateChannelHourlyActivityBarChart hourValues
+charsToLinesRatio :: FormatterM ()
+charsToLinesRatio = do
+    ratios <- (charsLines . take 15 . topMessages . M.toList . stats) `fmap` get
+    addOutput $ generateCharsToLinesRatio ratios
+
+hourlyActivity :: FormatterM ()
+hourlyActivity = do
+    let getHourValues = snd . unzip . M.toList . sumHours . M.toList
+    hourValues <- (getHourValues . stats) `fmap` get
+    addOutput $ generateChannelHourlyActivityBarChart hourValues
+
+kickScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
+kickScoreboard [] = do openPanel; addOutput "Nobody kicked anyone in the channel."; closePanel
+kickScoreboard ((fist, ([_, _, kicks], _)):_) = do
+    openPanel
+    addOutput ("<b>" ++ S.unpack fist ++ "</b>")
+    addOutput " ruled with an iron fist. He kicked <b>"
+    addOutput (show kicks)
+    addOutput "</b> people out of the channel!"
+    closePanel
+
+-- | Compares the @j@th and @i@th indices of an int array. TODO: why do I [have to] do this.
+--   I am not good at compu^Whaskell.
+compareIthJth :: (Ord k) => Int -> Int -> [k] -> [k] -> Ordering
+compareIthJth i j xs ys = compare jth ith
   where
-    hourValues = snd (unzip (M.toList (sumHours stats)))
+    ith = xs !! i
+    jth = ys !! j
 
-insertKickScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()
-insertKickScoreboard [] = do openPanel; addOutput "Nobody kicked anyone in the channel."; closePanel
-insertKickScoreboard ((fist, ([_, _, kicks], _)):_) = do
-  openPanel
-  addOutput ("<b>" ++ S.unpack fist ++ "</b>")
-  addOutput " ruled with an iron fist. He kicked <b>"
-  addOutput (show kicks)
-  addOutput "</b> people out of the channel!"
-  closePanel
-
+-- | Um... giggle.
+charsLines :: [(S.ByteString, UserStats)] -> [(String, Int, Int)]
+charsLines wl = let getCLtriple (nick, ([l, c, _], _)) = (S.unpack nick, l, c) in map getCLtriple wl

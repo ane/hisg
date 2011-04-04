@@ -74,6 +74,14 @@ matchMessage line statsMap = case match (compile normalMessageRegex []) line [] 
 matchKick :: S.ByteString -> StatsMap -> Maybe StatsMap
 matchKick line map = case match (compile kickMessageRegex []) line [] of
   Just (_:_:_:_:nick:_)
+    -- for some reason this deepseq makes the whole thing run in constant space.
+    -- why? i deduced that it likely results from the resulting strictness, i.e.
+    -- the map is evaluated deeply before we increase a kick, ultimately allowing
+    -- the compiler to conclude that this was the final match. however, doing this
+    -- on every failure (i.e. using it as the Nothing) only slows the program down,
+    -- approximately to 300%, but cuts GC time to 2-3%. where's the tradeoff. thus
+    -- it is faster to parse for hypothetical kicks (or whatever) than do a strict
+    -- evaluation on *every* parsing failure.
     -> Just $ map `deepseq` M.insertWith' incKick nick ([0, 0, 1], M.empty) map
   _ -> Nothing
 
