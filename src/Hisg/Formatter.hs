@@ -57,6 +57,9 @@ addOutput str = do
 getFinalOutput :: FormatterM String
 getFinalOutput = output `fmap` get
 
+heading :: String -> FormatterM ()
+heading text = addOutput $ "<div class=\"heading\"><h2>" ++ text ++ "</h2></div>"
+
 -- | Adds HTML headers to the output.
 headers :: String -> FormatterM ()
 headers chan =
@@ -76,8 +79,8 @@ scoreboard :: Int -> FormatterM ()
 scoreboard n | n == 0 = scoreboard 15
              | otherwise = do
     userStats <- (take n . topMessages . M.toList . stats) `fmap` get
+    heading $ "The Top " ++ show n
     addOutput $
-        "<h2>Top 15 users</h2>" ++
         "<table>\n<tr><th></th><th>Nickname</th><th>Lines</th><th>Characters per line</th><th>Activity by hour</th></tr>"
         ++
         concatMap (\(rank, (nick, ([lineC, wordC, _], hours))) ->
@@ -121,12 +124,14 @@ topMessages = sortBy messagePopular
 charsToLinesRatio :: FormatterM ()
 charsToLinesRatio = do
     ratios <- (charsLines . take 15 . topMessages . M.toList . stats) `fmap` get
+    heading "Characters per line distributions"
     addOutput $ generateCharsToLinesRatio ratios
 
 hourlyActivity :: FormatterM ()
 hourlyActivity = do
     let getHourValues = snd . unzip . M.toList . sumHours . M.toList
     hourValues <- (getHourValues . stats) `fmap` get
+    heading "Channel activity by hour"
     addOutput $ generateChannelHourlyActivityBarChart hourValues
 
 kickScoreboard :: [(S.ByteString, UserStats)] -> FormatterM ()

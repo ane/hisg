@@ -23,6 +23,7 @@
 
 module Hisg.Core where
 
+import Data.Time.Clock
 import Control.Monad.State.Lazy
 import Data.Maybe
 import Data.List
@@ -65,23 +66,23 @@ loadFile inp = do
     addFile logf
 
 -- | Formats and writes each analyzed file.
-processFiles :: (String -> IRCLog -> FormatterM String) -> HisgM ()
-processFiles formatter = do
+processFiles :: UTCTime -> (String -> IRCLog -> NominalDiffTime -> FormatterM String) -> HisgM ()
+processFiles startTime formatter = do
     fileBucket <- files `fmap` get
-    mapM_ (\x -> liftIO (processLog x formatter)) fileBucket
+    mapM_ (\file -> liftIO (processLog file startTime formatter)) fileBucket
 
 
 -- | Formats and writes the output to a file using the formatter.
-processLog :: IRCLog -> (String -> IRCLog -> FormatterM String) -> IO ()
-processLog ircLog formatterFunc = do
+processLog :: IRCLog -> UTCTime -> (String -> IRCLog -> NominalDiffTime -> FormatterM String) -> IO ()
+processLog ircLog operationStartTime formatterFunc = do
     let fn = takeWhile ('.' /=) $ filename ircLog
         out = fn ++ ".html"
     putStr $ "Formatting " ++ filename ircLog ++ "..."
-    output <- let stats = userScores ircLog in
-              evalStateT (formatterFunc fn ircLog) (Formatter "" stats)
+    endTime <- getCurrentTime
+    output <- let stats   = userScores ircLog
+                  elapsed = diffUTCTime endTime operationStartTime
+              in evalStateT (formatterFunc fn ircLog elapsed) (Formatter "" stats)
     putStrLn " done."
     putStr $ "Writing " ++ out ++ "..."
-    outf <- openFile out WriteMode
-    hPutStrLn outf output
-    hClose outf
+    writeFile out output
     putStrLn " done."

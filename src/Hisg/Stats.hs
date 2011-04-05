@@ -57,33 +57,33 @@ calcUserStats = mapReduce rseq (foldl' matchAll M.empty . L.lines)
 
 -- | Chains all matches together. TODO: implement this in a non-stupid way.
 matchAll :: StatsMap -> L.ByteString -> StatsMap
-matchAll m line = let converted = conv line in
-                  fromMaybe (fromMaybe m (matchKick converted m)) (matchMessage converted m)
+matchAll statsMap line = let converted = conv line in
+                         matchKick converted (matchMessage converted statsMap)
 
 -- | Increases the message line count and word count and modifies an users's hour distribution
 --   should the regexp match.
-matchMessage :: S.ByteString -> StatsMap -> Maybe StatsMap  -- our modified map if the line matches
+matchMessage :: S.ByteString -> (StatsMap -> StatsMap)  -- our modified map if the line matches
 matchMessage line statsMap = case match (compile normalMessageRegex []) line [] of
-  Just (_:hour:nick:contents:_)
-    -> Just $ M.insertWith' (incMessage hour) nick newValue statsMap
-      where
-        newValue = ([1, contents `pseq` S.length contents, 0], M.adjust succ hour emptyHourStats)
-  _ -> Nothing
+    Just (_:hour:nick:contents:_)
+      -> M.insertWith' (incMessage hour) nick newValue statsMap
+        where
+          newValue = ([1, contents `pseq` S.length contents, 0], M.adjust succ hour emptyHourStats)
+    _ -> statsMap
 
 -- | Increases the kick count of a user if the regex matches.
-matchKick :: S.ByteString -> StatsMap -> Maybe StatsMap
+matchKick :: S.ByteString -> StatsMap -> StatsMap
 matchKick line map = case match (compile kickMessageRegex []) line [] of
-  Just (_:_:_:_:nick:_)
-    -- for some reason this deepseq makes the whole thing run in constant space.
-    -- why? i deduced that it likely results from the resulting strictness, i.e.
-    -- the map is evaluated deeply before we increase a kick, ultimately allowing
-    -- the compiler to conclude that this was the final match. however, doing this
-    -- on every failure (i.e. using it as the Nothing) only slows the program down,
-    -- approximately to 300%, but cuts GC time to 2-3%. where's the tradeoff. thus
-    -- it is faster to parse for hypothetical kicks (or whatever) than do a strict
-    -- evaluation on *every* parsing failure.
-    -> Just $ map `deepseq` M.insertWith' incKick nick ([0, 0, 1], M.empty) map
-  _ -> Nothing
+    Just (_:_:_:_:nick:_)
+      -- for some reason this deepseq makes the whole thing run in constant space.
+      -- why? i deduced that it likely results from the resulting strictness, i.e.
+      -- the map is evaluated deeply before we increase a kick, ultimately allowing
+      -- the compiler to conclude that this was the final match. however, doing this
+      -- on every failure (i.e. using it as the Nothing) only slows the program down,
+      -- approximately to 300%, but cuts GC time to 2-3%. where's the tradeoff. thus
+      -- it is faster to parse for hypothetical kicks (or whatever) than do a strict
+      -- evaluation on *every* parsing failure.
+      -> map `deepseq` M.insertWith' incKick nick ([0, 0, 1], M.empty) map
+    _ -> map
 
 conv = S.concat . L.toChunks
 

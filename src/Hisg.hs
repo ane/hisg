@@ -22,6 +22,7 @@
 module Main where
 
 import Data.Maybe
+import Data.Time.Clock
 import System.Console.GetOpt
 import System.Environment (getArgs)
 
@@ -52,21 +53,25 @@ usage :: String
 usage = usageInfo "Usage: hisg [option...] INPUTFILES" options
 
 -- | Formats a log file, producing HTML ouput.
-layout :: String -> IRCLog -> FormatterM String
-layout chan logf = do
+layout :: String -> IRCLog -> NominalDiffTime -> FormatterM String
+layout chan logfile elapsedTime = do
     headers chan
     scoreboard 15
     hourlyActivity
     charsToLinesRatio
-    footer "0.1.0"
+    footer $ "0.1.0 in " ++ show elapsedTime
     getFinalOutput
 
 -- | Parses the command line options and then processes files (if any).
 runHisg :: [String] -> HisgM ()
-runHisg [] = loadFile "sekopaat.log" >> processFiles layout -- TEST LOG, REPLACE WITH USAGE
+runHisg [] = do
+    currentTime <- liftIO getCurrentTime
+    loadFile "sekopaat.log"
+    processFiles currentTime layout -- TEST LOG, REPLACE WITH USAGE
 runHisg args = do
+    currentTime <- liftIO getCurrentTime
     runArgs args
-    processFiles layout
+    processFiles currentTime layout
 
 runArgs :: [String] -> HisgM ()
 runArgs args =
@@ -84,4 +89,3 @@ decide opt =
 main = do
     args <- getArgs
     runStateT (runHisg args) (Hisg [])
-
