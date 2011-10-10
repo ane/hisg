@@ -22,7 +22,7 @@
 module Main where
 
 import Data.Maybe
-import Data.Arry
+import Data.Array
 import Data.Time.Clock
 import System.Console.GetOpt
 import System.Environment (getArgs)

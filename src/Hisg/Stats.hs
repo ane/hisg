@@ -32,6 +32,7 @@ import Text.Printf
 import Hisg.MapReduce
 import Hisg.Formats.Irssi
 
+import Control.Arrow
 import Control.Parallel (pseq)
 import Control.DeepSeq
 
@@ -55,24 +56,24 @@ calcUserStats :: [L.ByteString] -> StatsMap
 calcUserStats = mapReduce rseq (foldl' matchAll M.empty . L.lines)
                    rseq (M.unionsWith sumUser)
 
--- | Chains all matches together. TODO: implement this in a non-stupid way.
+-- | Chains all matches together. TODO: implement this in a non-slineStatsid way.
 matchAll :: StatsMap -> L.ByteString -> StatsMap
 matchAll statsMap line = let converted = conv line in
-                         matchKick converted (matchMessage converted statsMap)
+                         snd . matchKick . matchMessage $ (converted, statsMap)
 
 -- | Increases the message line count and word count and modifies an users's hour distribution
 --   should the regexp match.
-matchMessage :: S.ByteString -> (StatsMap -> StatsMap)  -- our modified map if the line matches
-matchMessage line statsMap = case match (compile normalMessageRegex []) line [] of
+matchMessage :: (S.ByteString, StatsMap) -> (S.ByteString, StatsMap)  -- our modified map if the line matches
+matchMessage lineStats = case match (compile normalMessageRegex []) (fst lineStats) [] of
     Just (_:hour:nick:contents:_)
-      -> M.insertWith' (incMessage hour) nick newValue statsMap
+      -> second (M.insertWith' (incMessage hour) nick newValue) lineStats
         where
           newValue = ([1, contents `pseq` S.length contents, 0], M.adjust succ hour emptyHourStats)
-    _ -> statsMap
+    _ -> lineStats
 
 -- | Increases the kick count of a user if the regex matches.
-matchKick :: S.ByteString -> StatsMap -> StatsMap
-matchKick line map = case match (compile kickMessageRegex []) line [] of
+matchKick :: (S.ByteString, StatsMap) -> (S.ByteString, StatsMap)
+matchKick lineStats@(line, statsMap) = case match (compile kickMessageRegex []) line [] of
     Just (_:_:_:_:nick:_)
       -- for some reason this deepseq makes the whole thing run in constant space.
       -- why? i deduced that it likely results from the resulting strictness, i.e.
@@ -82,8 +83,8 @@ matchKick line map = case match (compile kickMessageRegex []) line [] of
       -- approximately to 300%, but cuts GC time to 2-3%. where's the tradeoff. thus
       -- it is faster to parse for hypothetical kicks (or whatever) than do a strict
       -- evaluation on *every* parsing failure.
-      -> map `deepseq` M.insertWith' incKick nick ([0, 0, 1], M.empty) map
-    _ -> map
+      -> second (\m -> m `deepseq` M.insertWith' incKick nick ([0, 0, 1], M.empty) m) lineStats
+    _ -> lineStats
 
 conv = S.concat . L.toChunks
 
