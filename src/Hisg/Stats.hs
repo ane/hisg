@@ -36,9 +36,6 @@ import Control.Arrow
 import Control.Parallel (pseq)
 import Control.DeepSeq
 
-instance NFData S.ByteString where
-    rnf _ = ()    -- not built into Control.Parallel.Strategies
-
 -- | An empty hourly distribution map.
 emptyHourStats :: M.Map S.ByteString Int
 emptyHourStats = M.fromList (zip (map (\x -> S.pack (printf "%02d" (x::Int))) [0 .. 23]) (repeat 0))

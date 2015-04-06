@@ -10,7 +10,7 @@ Cabal-Version:          >=1.2
 extra-source-files:     README
 
 Executable hisg
-  Build-Depends:    parsec, split, base >= 4, haskell98, mtl, syb, bytestring, parallel, pcre-light, containers, deepseq, time
+  Build-Depends:    array, parsec, split, base >= 4, mtl, syb, bytestring, parallel, pcre-light, containers, deepseq, time
   Main-Is:          Hisg.hs
   Hs-Source-Dirs:   src
 

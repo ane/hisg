@@ -1,4 +1,4 @@
--- hisg - IRC stats generator.
+-- hisg - Haskell IRC stats generator.
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
@@ -23,17 +23,11 @@
 
 module Hisg.Core where
 
-import Data.Time.Clock
-import Control.Monad.State.Lazy
-import Data.Maybe
-import Data.List
-import System.IO
-import qualified Data.Map as M
-
-import qualified Data.ByteString.Char8 as S
-import Hisg.IRCLog
-import Hisg.Formatter
-import Hisg.Stats
+import           Control.Monad.State.Lazy
+import           Data.Maybe
+import           Data.Time.Clock
+import           Hisg.Formatter
+import           Hisg.IRCLog
 
 -- | The Hisg state monad that implements the link between user input and program execution.
 type HisgM = StateT Hisg IO
@@ -47,29 +41,29 @@ data HisgChange = ParseFile IRCLog
 
 -- | Adds a log file into the parsing bucket.
 addFile :: IRCLog -> HisgM ()
-addFile ircLog = do
-    oldFiles <- files `liftM` get
-    put $ Hisg $ ircLog : oldFiles
+addFile ircLog = modify (Hisg . (:) ircLog . files)
 
 -- | Gets a file from the parsing bucket. Names are unique.
 getFile :: String -> HisgM (Maybe IRCLog)
 getFile n = do
     hst <- get
-    return $ listToMaybe $ filter (\logf -> filename logf == n) (files hst)
+    return $ listToMaybe $ filter ((==) n . filename) (files hst)
 
 -- | Loads a file and queues it for parsing.
 loadFile :: String -> HisgM ()
 loadFile inp = do
     logf <- liftIO $ do
-              putStrLn $ "Processing " ++ inp ++ "..."
-              loadLog inp
+      putStrLn $ "Processing " ++ inp ++ "..."
+      loadLog inp
     addFile logf
 
 -- | Formats and writes each analyzed file.
 processFiles :: UTCTime -> (String -> IRCLog -> NominalDiffTime -> FormatterM String) -> HisgM ()
 processFiles startTime formatter = do
     fileBucket <- files `fmap` get
-    mapM_ (\file -> liftIO (processLog file startTime formatter)) fileBucket
+    mapM_ (liftIO . churn) fileBucket
+    where
+      churn f = processLog f startTime formatter
 
 
 -- | Formats and writes the output to a file using the formatter.
@@ -79,10 +73,11 @@ processLog ircLog operationStartTime formatterFunc = do
         out = fn ++ ".html"
     putStr $ "Formatting " ++ filename ircLog ++ "..."
     endTime <- getCurrentTime
-    output <- let stats   = userScores ircLog
-                  elapsed = diffUTCTime endTime operationStartTime
-              in evalStateT (formatterFunc fn ircLog elapsed) (Formatter "" stats)
+    derp <- let elapsed = diffUTCTime endTime operationStartTime
+            in evalStateT (formatterFunc fn ircLog elapsed) (Formatter "" . userScores $ ircLog)
     putStrLn " done."
     putStr $ "Writing " ++ out ++ "..."
-    writeFile out output
+    writeFile out derp
     putStrLn " done."
+
+

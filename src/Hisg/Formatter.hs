@@ -18,19 +18,14 @@
 
 module Hisg.Formatter where
 
-import System.IO
 import Data.List
 import Control.Monad.State.Lazy
-import Data.Maybe
-import Data.List
-import System.IO
 
 import Text.Printf
 
 import Hisg.Stats
 import Hisg.Misc
 import Hisg.Chart
-import Hisg.User
 
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S

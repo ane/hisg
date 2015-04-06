@@ -1,4 +1,5 @@
--- hisg - IRC stats generator.
+{-# LANGUAGE OverloadedStrings #-}
+module Main where
 --
 -- Copyright (c) 2009, 2010 Antoine Kalmbach <antoine dot kalmbach at jyu dot fi>
 -- All rights reserved.
@@ -16,29 +17,19 @@
 --
 -- For further details, see LICENSE.
 
-{-# OPTIONS_GHC -cpp -fglasgow-exts #-}
-{-# LANGUAGE CPP #-}
+import           Data.Time.Clock
+import           System.Console.GetOpt
+import           System.Environment       (getArgs)
 
-module Main where
+import           Control.Monad.State.Lazy
 
-import Data.Maybe
-import Data.Array
-import Data.Time.Clock
-import System.Console.GetOpt
-import System.Environment (getArgs)
+import           Hisg.Core
+import           Hisg.Formatter
+import           Hisg.IRCLog
 
-import Control.Monad
-import Control.Monad.Trans
-import Control.Monad.State.Lazy
 
-import Hisg.Core
-import Hisg.Formatter
-import Hisg.IRCLog
-
-version_ = "0.1.0"
-
-version = "hisg v" ++ version_
-exactVersion = version ++ " compiled on " ++ __DATE__ ++ " at " ++ __TIME__
+version_ :: String
+version_ = "hisg v0.1.0"
 
 data Opts = Help
           | Version
@@ -76,7 +67,7 @@ runHisg args = do
 
 runArgs :: [String] -> HisgM ()
 runArgs args =
-    case (getOpt (ReturnInOrder File) options args) of
+    case getOpt (ReturnInOrder File) options args of
         (o, [], []) -> mapM_ decide o
         (_, _, errs) -> fail (concat errs)
 
@@ -84,9 +75,14 @@ decide :: Opts -> HisgM ()
 decide opt =
     case opt of
         Help -> liftIO $ putStrLn usage
-        Version -> liftIO $ putStrLn exactVersion
+        Version -> liftIO $ putStrLn version_
         File fn -> loadFile fn
 
+main :: IO ()
 main = do
-    args <- getArgs
-    runStateT (runHisg args) (Hisg [])
+  args <- getArgs
+  _ <- runStateT (runHisg args) (Hisg [])
+  return ()
+
+bar :: IO ()
+bar = putStrLn "foo"
