@@ -6,11 +6,10 @@ License-file:           LICENSE
 Author:                 Antoine Kalmbach
 Maintainer:             antoine.kalmbach@jyu.fi
 Build-Type:             Simple
-Cabal-Version:          >=1.2
 extra-source-files:     README
 
 Executable hisg
-  Build-Depends:    array, parsec, split, base >= 4, mtl, syb, bytestring, parallel, pcre-light, containers, deepseq, time
-  Main-Is:          Hisg.hs
+  Build-Depends:    array, split, base >= 4, mtl, syb, bytestring, parallel, pcre-light, containers, deepseq, time
+  Main-Is:          hisg.hs
   Hs-Source-Dirs:   src
 
