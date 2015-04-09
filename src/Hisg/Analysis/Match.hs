@@ -1,8 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Match
        ( match )
        where
 
-import Hisg.Analysis.Event
+import           Hisg.Analysis.Event
 
-match :: String -> Event Message
-match "hello" = Msg $ Message "ding" "dong"
+match :: String -> Maybe Event
+match str =
+  case str of
+    "hello" -> Just $ Message "ane" str
+    "barp"  -> Just $ Kick "ane" "ena" "una"
+

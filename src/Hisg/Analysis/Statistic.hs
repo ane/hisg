@@ -1,33 +1,49 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE RecordWildCards        #-}
 module Hisg.Analysis.Statistic
-       ( User(..)
-       , UserStats(..)
-       , Statistic(..)
+       ( Users
+       , Behaviour(..)
        , compute
+       , identifier
+       , behaviours
+       , coalesce
        ) where
 
-import Hisg.Analysis.Event
-import Data.List.Split
+import           Data.List.Split
+import qualified Data.Map            as M
+import           Data.Monoid
+import           Hisg.Analysis.Event
 
-data User = User String UserStats
-
-data UserStats = UserStats { lineCount :: Int
+data Behaviour = Behaviour { lineCount :: Int
                            , wordCount :: Int
                            , kicks     :: Int }
-class Statistic a b where
-  identifier :: a -> String
-  update :: a -> b -> b
+                 deriving Show
 
-instance Statistic Kick UserStats where
-  identifier = kicker
-  update Kick {..} u = u { kicks = 1 + kicks u }
+instance Monoid Behaviour where
+  mempty = Behaviour { lineCount = 0, wordCount = 0, kicks = 0 }
+  mappend (Behaviour lc1 wc1 k1) (Behaviour lc2 wc2 k2) = Behaviour (lc1 + lc2) (wc1 + wc2) (k1 + k2)
 
-instance Statistic Message UserStats where
-  identifier = author
-  update (Message _ contents) u = u { lineCount = lineCount u + 1, wordCount = wordCount u + w }
-    where
-      w = length . splitOn " " $ contents
+type Users a = M.Map String a
 
-compute :: Statistic a b => a -> b -> b
-compute = update
+identifier :: Event -> Maybe String
+identifier Kick{..} = Just kicker
+identifier Message{..} = Just author
+identifier _ = Nothing
+
+compute :: Event -> Behaviour
+compute evt =
+  let def = Behaviour { lineCount = 0, wordCount = 0, kicks = 0 } in
+  case evt of
+    Kick{..}    -> def { kicks = 1 }
+    Message{..} -> def { lineCount = 1, wordCount = length . splitOn " " $ contents }
+    _           -> def
+
+
+behaviours :: [Event] -> Users Behaviour
+behaviours = foldr add M.empty
+  where
+    add e m = maybe m (\user -> M.insertWith mappend user (compute e) m) (identifier e)
+
+coalesce :: Monoid m => Users m -> Users m -> Users m
+coalesce = M.unionWith mappend
